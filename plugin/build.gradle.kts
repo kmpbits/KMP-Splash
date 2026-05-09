@@ -1,7 +1,6 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    `maven-publish`
 }
 
 group = "io.kmpbits"
@@ -22,8 +21,3 @@ gradlePlugin {
     }
 }
 
-publishing {
-    repositories {
-        mavenLocal()
-    }
-}
