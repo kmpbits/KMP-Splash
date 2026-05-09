@@ -3,6 +3,11 @@ plugins {
     `java-gradle-plugin`
 }
 
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
+}
+
 group = "io.kmpbits"
 version = "0.1.0"
 
