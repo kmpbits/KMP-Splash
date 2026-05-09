@@ -20,7 +20,7 @@ class KmpSplashPlugin : Plugin<Project> {
         val iosPath = ext.iosProjectPath.orNull
             ?: error("KmpSplash: iosProjectPath must be set in the splashScreen { } block")
 
-        val task = project.tasks.register("generateLaunchScreen", GenerateLaunchScreenTask::class.java) { t ->
+        val task = project.tasks.register("generateLaunchScreen", GenerateLaunchScreenTask::class.java) { t: GenerateLaunchScreenTask ->
             t.group = "kmp-splash"
             t.description = "Generates LaunchScreen.storyboard for iOS"
 
@@ -44,7 +44,7 @@ class KmpSplashPlugin : Plugin<Project> {
     }
 
     private fun registerAndroidTask(project: Project, ext: KmpSplashExtension) {
-        val task = project.tasks.register("generateAndroidSplash", GenerateAndroidSplashTask::class.java) { t ->
+        val task = project.tasks.register("generateAndroidSplash", GenerateAndroidSplashTask::class.java) { t: GenerateAndroidSplashTask ->
             t.group = "kmp-splash"
             t.description = "Generates Android splash screen themes.xml"
 
