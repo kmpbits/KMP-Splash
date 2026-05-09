@@ -1,20 +1,15 @@
 package io.kmpbits.splash.tasks
 
-import io.kmpbits.splash.template.LaunchScreenTemplate
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.w3c.dom.Element
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.OutputKeys
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
 
 abstract class GenerateLaunchScreenTask : DefaultTask() {
 
@@ -30,37 +25,35 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:Optional
     abstract val logoSourceFile: RegularFileProperty
 
-    /** The storyboard destination, e.g. <root>/iosApp/iosApp/LaunchScreen.storyboard */
-    @get:OutputFile
-    abstract val outputFile: RegularFileProperty
+    /**
+     * Assets.xcassets directory inside the iOS project folder.
+     * Contains the SplashBackground named color used by UILaunchScreen.
+     */
+    @get:OutputDirectory
+    abstract val xcassetsDir: DirectoryProperty
 
-    /** Generated SplashConfig.kt destination, e.g. src/iosMain/kotlin/io/kmpbits/splash/SplashConfig.kt */
     @get:OutputFile
     abstract val splashConfigFile: RegularFileProperty
+
+    @get:OutputFile
+    abstract val pbxprojFile: RegularFileProperty
 
     @TaskAction
     fun generate() {
         val resolvedColor = resolveBackgroundColor()
 
-        val out = outputFile.asFile.get()
-        out.parentFile.mkdirs()
-        out.writeText(
-            LaunchScreenTemplate.generate(
-                backgroundColor = resolvedColor,
-                logoResourceName = logoResourceName.orNull,
-            )
-        )
-        logger.lifecycle("KmpSplash: wrote ${out.absolutePath}")
-
-        patchInfoPlist(out.parentFile.resolve("Info.plist"))
+        generateColorAsset(resolvedColor)
+        patchInfoPlist(xcassetsDir.asFile.get().parentFile.resolve("Info.plist"))
+        patchProjectPbxproj()
         generateSplashConfig(resolvedColor)
 
         logoSourceFile.orNull?.asFile?.let { src ->
             if (src.exists()) {
-                val xcassets = out.parentFile.resolve("Assets.xcassets/${logoResourceName.get()}.imageset")
-                xcassets.mkdirs()
-                src.copyTo(xcassets.resolve(src.name), overwrite = true)
-                xcassets.resolve("Contents.json").writeText(contentsJson(src.name))
+                val imageset = xcassetsDir.asFile.get()
+                    .resolve("${logoResourceName.get()}.imageset")
+                imageset.mkdirs()
+                src.copyTo(imageset.resolve(src.name), overwrite = true)
+                imageset.resolve("Contents.json").writeText(logoContentsJson(src.name))
             }
         }
     }
@@ -69,19 +62,43 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
         val color = backgroundColor.orNull
         if (color == null) {
             logger.warn(
-                "KmpSplash: backgroundColor is not set in the splashScreen { } block. " +
-                "Falling back to #FFFFFF (white). Set backgroundColor to remove this warning."
+                "KmpSplash: backgroundColor is not set. Falling back to #FFFFFF."
             )
             return "#FFFFFF"
         }
         return color
     }
 
-    /**
-     * Generates SplashConfig.kt in the consuming project's iosMain source set.
-     * The developer uses SplashConfig.backgroundColor in their iOS SplashScreen call
-     * so the color is never duplicated between the DSL and the composable.
-     */
+    private fun generateColorAsset(hexColor: String) {
+        val (r, g, b) = parseHexColor(hexColor)
+        val xcassets = xcassetsDir.asFile.get()
+        xcassets.mkdirs()
+        xcassets.resolve("Contents.json").writeText(
+            """{"info":{"author":"kmp-splash","version":1}}"""
+        )
+        val colorset = xcassets.resolve("SplashBackground.colorset")
+        colorset.mkdirs()
+        colorset.resolve("Contents.json").writeText("""
+{
+  "colors": [
+    {
+      "color": {
+        "color-space": "srgb",
+        "components": { "alpha": "1.000", "red": "$r", "green": "$g", "blue": "$b" }
+      },
+      "idiom": "universal"
+    }
+  ],
+  "info": { "author": "kmp-splash", "version": 1 }
+}""".trimIndent())
+        val appiconset = xcassets.resolve("AppIcon.appiconset")
+        if (!appiconset.exists()) {
+            appiconset.mkdirs()
+            appiconset.resolve("Contents.json").writeText("""{"images":[],"info":{"author":"kmp-splash","version":1}}""")
+        }
+        logger.lifecycle("KmpSplash: wrote SplashBackground color asset")
+    }
+
     private fun generateSplashConfig(hexColor: String) {
         val argbHex = "FF${hexColor.trimStart('#').uppercase()}"
         val configFile = splashConfigFile.asFile.get()
@@ -102,63 +119,137 @@ object SplashConfig {
 
     private fun patchInfoPlist(plist: java.io.File) {
         if (!plist.exists()) {
-            logger.warn("KmpSplash: Info.plist not found at ${plist.absolutePath} — skipping UILaunchStoryboardName patch")
+            logger.warn("KmpSplash: Info.plist not found — skipping")
+            return
+        }
+        // Remove stale keys (plutil exits non-zero if key absent — that's fine)
+        runPlutil("-remove", "UILaunchStoryboardName", plist.absolutePath)
+        runPlutil("-remove", "UILaunchScreen", plist.absolutePath)
+        // Insert UILaunchScreen dict
+        runPlutil("-insert", "UILaunchScreen", "-dictionary", plist.absolutePath)
+        runPlutil("-insert", "UILaunchScreen.UIColorName", "-string", "SplashBackground", plist.absolutePath)
+        logger.lifecycle("KmpSplash: patched Info.plist with UILaunchScreen")
+    }
+
+    private fun runPlutil(vararg args: String) {
+        val process = ProcessBuilder("plutil", *args)
+            .redirectErrorStream(true)
+            .start()
+        process.waitFor()
+    }
+
+    private fun patchProjectPbxproj() {
+        val pbxproj = pbxprojFile.asFile.get()
+        if (!pbxproj.exists()) return
+
+        var text = pbxproj.readText()
+
+        val xcassetsFileRefUuid  = "B310DBF02A7B8C1B00943F69"
+        val xcassetsBuildFileUuid = "B310DBF12A7B8C1C00943F69"
+        val resourcesUuid        = "B310DBE22A7B8C1C00943F69"
+
+        // Remove stale storyboard entries if present
+        val storyboardBuildFile = "B310DBE02A7B8C1C00943F69"
+        val storyboardFileRef   = "B310DBE12A7B8C1B00943F69"
+        text = text.lines()
+            .filter { line ->
+                !line.contains(storyboardBuildFile) &&
+                !line.contains(storyboardFileRef) &&
+                !line.contains("LaunchScreen.storyboard")
+            }
+            .joinToString("\n")
+
+        val hasXcassetsRef = text.contains(xcassetsFileRefUuid)
+        val hasXcassetsInResources = text.contains("$xcassetsBuildFileUuid /* Assets.xcassets in Resources */,")
+
+        if (hasXcassetsRef && hasXcassetsInResources) {
+            logger.lifecycle("KmpSplash: project.pbxproj already references Assets.xcassets")
+            pbxproj.writeText(text)
             return
         }
 
-        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(plist)
-        doc.documentElement.normalize()
-
-        val rootDict = doc.documentElement
-            .getElementsByTagName("dict")
-            .item(0) as? Element
-            ?: run {
-                logger.warn("KmpSplash: could not find root <dict> in Info.plist — skipping patch")
-                return
-            }
-
-        val children = rootDict.childNodes
-        var keyIndex = -1
-        for (i in 0 until children.length) {
-            val node = children.item(i)
-            if (node.nodeName == "key" && node.textContent.trim() == "UILaunchStoryboardName") {
-                keyIndex = i
-                break
-            }
+        // 1. PBXBuildFile
+        if (!text.contains(xcassetsBuildFileUuid)) {
+            text = text.replace(
+                "/* End PBXBuildFile section */",
+                "\t\t$xcassetsBuildFileUuid /* Assets.xcassets in Resources */ = " +
+                "{isa = PBXBuildFile; fileRef = $xcassetsFileRefUuid /* Assets.xcassets */; };\n" +
+                "/* End PBXBuildFile section */"
+            )
         }
 
-        if (keyIndex >= 0) {
-            for (i in keyIndex + 1 until children.length) {
-                val sibling = children.item(i)
-                if (sibling.nodeName == "string") {
-                    sibling.textContent = "LaunchScreen"
-                    break
-                }
-            }
-        } else {
-            val keyEl = doc.createElement("key").also { it.textContent = "UILaunchStoryboardName" }
-            val valueEl = doc.createElement("string").also { it.textContent = "LaunchScreen" }
-            rootDict.appendChild(keyEl)
-            rootDict.appendChild(valueEl)
+        // 2. PBXFileReference
+        if (!hasXcassetsRef) {
+            text = text.replace(
+                "/* End PBXFileReference section */",
+                "\t\t$xcassetsFileRefUuid /* Assets.xcassets */ = " +
+                "{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; " +
+                "path = Assets.xcassets; sourceTree = \"<group>\"; };\n" +
+                "/* End PBXFileReference section */"
+            )
         }
 
-        val transformer = TransformerFactory.newInstance().newTransformer().apply {
-            setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, "-//Apple//DTD PLIST 1.0//EN")
-            setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, "http://www.apple.com/DTDs/PropertyList-1.0.dtd")
-            setOutputProperty(OutputKeys.INDENT, "yes")
-            setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4")
-            setOutputProperty(OutputKeys.ENCODING, "UTF-8")
+        // 3. Group entry after Info.plist
+        if (!text.contains("$xcassetsFileRefUuid /* Assets.xcassets */,")) {
+            text = text.replace(
+                "B310DBB52A7B8C1B00943F69 /* Info.plist */,",
+                "B310DBB52A7B8C1B00943F69 /* Info.plist */,\n\t\t\t\t$xcassetsFileRefUuid /* Assets.xcassets */,"
+            )
         }
-        transformer.transform(DOMSource(doc), StreamResult(plist))
-        logger.lifecycle("KmpSplash: patched UILaunchStoryboardName in ${plist.absolutePath}")
+
+        // 4. Ensure PBXResourcesBuildPhase exists
+        if (!text.contains("PBXResourcesBuildPhase")) {
+            val phase = """
+/* Begin PBXResourcesBuildPhase section */
+		$resourcesUuid /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				$xcassetsBuildFileUuid /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+"""
+            text = text.replace(
+                "/* Begin PBXSourcesBuildPhase section */",
+                phase + "/* Begin PBXSourcesBuildPhase section */"
+            )
+        } else if (!hasXcassetsInResources) {
+            // Add xcassets to existing Resources phase files list
+            text = text.replace(
+                "$resourcesUuid /* Resources */ = {\n\t\t\tisa = PBXResourcesBuildPhase;\n\t\t\tbuildActionMask = 2147483647;\n\t\t\tfiles = (\n\t\t\t);",
+                "$resourcesUuid /* Resources */ = {\n\t\t\tisa = PBXResourcesBuildPhase;\n\t\t\tbuildActionMask = 2147483647;\n\t\t\tfiles = (\n\t\t\t\t$xcassetsBuildFileUuid /* Assets.xcassets in Resources */,\n\t\t\t);"
+            )
+        }
+
+        // 5. Ensure Resources phase is in target buildPhases
+        if (!text.contains("$resourcesUuid /* Resources */,")) {
+            text = text.replace(
+                "B310DBCA2A7B8C1C00943F69 /* Embed Frameworks */,",
+                "$resourcesUuid /* Resources */,\n\t\t\t\tB310DBCA2A7B8C1C00943F69 /* Embed Frameworks */,"
+            )
+        }
+
+        pbxproj.writeText(text)
+        logger.lifecycle("KmpSplash: patched project.pbxproj to reference Assets.xcassets")
     }
 
-    private fun contentsJson(filename: String) = """{
-  "images" : [
-    { "idiom" : "universal", "filename" : "$filename", "scale" : "1x" },
-    { "idiom" : "universal", "scale" : "2x" },
-    { "idiom" : "universal", "scale" : "3x" }
+    private fun parseHexColor(hex: String): Triple<String, String, String> {
+        val clean = hex.trimStart('#').also {
+            require(it.length == 6) { "backgroundColor must be #RRGGBB, got: $hex" }
+        }
+        fun channel(start: Int) = (clean.substring(start, start + 2).toInt(16) / 255.0).toString()
+        return Triple(channel(0), channel(2), channel(4))
+    }
+
+    private fun logoContentsJson(filename: String) = """{
+  "images": [
+    { "idiom": "universal", "filename": "$filename", "scale": "1x" },
+    { "idiom": "universal", "scale": "2x" },
+    { "idiom": "universal", "scale": "3x" }
   ],
-  "info" : { "author" : "kmp-splash", "version" : 1 }
+  "info": { "author": "kmp-splash", "version": 1 }
 }"""
 }

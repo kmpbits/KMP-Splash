@@ -20,18 +20,30 @@ class KmpSplashPlugin : Plugin<Project> {
             GenerateLaunchScreenTask::class.java,
             Action<GenerateLaunchScreenTask> {
                 group = "kmp-splash"
-                description = "Generates LaunchScreen.storyboard and SplashConfig.kt for iOS"
+                description = "Generates Assets.xcassets launch color and SplashConfig.kt for iOS"
 
                 backgroundColor.set(ext.backgroundColor)
-                outputFile.set(
-                    project.rootProject.layout.file(
+                xcassetsDir.set(
+                    project.rootProject.layout.dir(
                         ext.iosProjectPath.map { iosPath ->
-                            project.rootProject.file("$iosPath/LaunchScreen.storyboard")
+                            project.rootProject.file("$iosPath/Assets.xcassets")
                         }
                     )
                 )
                 splashConfigFile.set(
                     project.file("src/iosMain/kotlin/io/kmpbits/splash/SplashConfig.kt")
+                )
+                pbxprojFile.set(
+                    project.rootProject.layout.file(
+                        ext.iosProjectPath.map { iosPath ->
+                            val iosDir = project.rootProject.file(iosPath)
+                            iosDir.parentFile
+                                .listFiles()
+                                ?.firstOrNull { it.name.endsWith(".xcodeproj") }
+                                ?.resolve("project.pbxproj")
+                                ?: error("KmpSplash: no .xcodeproj found next to $iosPath")
+                        }
+                    )
                 )
                 logoSourceFile.set(
                     project.layout.file(ext.logoFile.map { project.file(it) })

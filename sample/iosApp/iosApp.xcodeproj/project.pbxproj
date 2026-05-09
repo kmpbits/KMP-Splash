@@ -11,6 +11,7 @@
 		B310DBB12A7B8C1C00943F69 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B310DBB12A7B8C1B00943F69 /* ContentView.swift */; };
 		B310DBB22A7B8C1C00943F69 /* composeApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B310DBB22A7B8C1B00943F69 /* composeApp.framework */; };
 		B310DBB32A7B8C1C00943F69 /* composeApp.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B310DBB22A7B8C1B00943F69 /* composeApp.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B310DBF12A7B8C1C00943F69 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B310DBF02A7B8C1B00943F69 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,8 +32,9 @@
 		B310DBAE2A7B8C1B00943F69 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B310DBB02A7B8C1B00943F69 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		B310DBB12A7B8C1B00943F69 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		B310DBB22A7B8C1B00943F69 /* composeApp.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = composeApp.framework; path = composeApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B310DBB22A7B8C1B00943F69 /* composeApp.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = composeApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B310DBB52A7B8C1B00943F69 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B310DBF02A7B8C1B00943F69 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +72,7 @@
 				B310DBB02A7B8C1B00943F69 /* iOSApp.swift */,
 				B310DBB12A7B8C1B00943F69 /* ContentView.swift */,
 				B310DBB52A7B8C1B00943F69 /* Info.plist */,
+				B310DBF02A7B8C1B00943F69 /* Assets.xcassets */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -142,6 +145,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B310DBF12A7B8C1C00943F69 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
