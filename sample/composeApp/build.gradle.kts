@@ -15,6 +15,16 @@ kotlin {
     jvmToolchain(17)
 
     androidTarget()
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64(),
+    ).forEach {
+        it.binaries.framework {
+            baseName = "composeApp"
+            isStatic = true
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {

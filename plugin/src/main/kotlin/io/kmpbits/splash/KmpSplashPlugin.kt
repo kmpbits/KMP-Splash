@@ -10,17 +10,11 @@ class KmpSplashPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         val ext = project.extensions.create("splashScreen", KmpSplashExtension::class.java)
-
-        project.afterEvaluate {
-            registerIosTask(project, ext)
-            registerAndroidTask(project, ext)
-        }
+        registerIosTask(project, ext)
+        registerAndroidTask(project, ext)
     }
 
     private fun registerIosTask(project: Project, ext: KmpSplashExtension) {
-        val iosPath = ext.iosProjectPath.orNull
-            ?: error("KmpSplash: iosProjectPath must be set in the splashScreen { } block")
-
         val task = project.tasks.register(
             "generateLaunchScreen",
             GenerateLaunchScreenTask::class.java,
@@ -29,21 +23,27 @@ class KmpSplashPlugin : Plugin<Project> {
                 description = "Generates LaunchScreen.storyboard and SplashConfig.kt for iOS"
 
                 backgroundColor.set(ext.backgroundColor)
-                outputFile.set(project.rootProject.file("$iosPath/LaunchScreen.storyboard"))
+                outputFile.set(
+                    project.rootProject.layout.file(
+                        ext.iosProjectPath.map { iosPath ->
+                            project.rootProject.file("$iosPath/LaunchScreen.storyboard")
+                        }
+                    )
+                )
                 splashConfigFile.set(
                     project.file("src/iosMain/kotlin/io/kmpbits/splash/SplashConfig.kt")
                 )
-
-                ext.logoFile.orNull?.let { logoPath ->
-                    val logoFile = project.file(logoPath)
-                    logoResourceName.set(logoFile.nameWithoutExtension)
-                    logoSourceFile.set(logoFile)
-                }
+                logoSourceFile.set(
+                    project.layout.file(ext.logoFile.map { project.file(it) })
+                )
+                logoResourceName.set(
+                    ext.logoFile.map { project.file(it).nameWithoutExtension }
+                )
             }
         )
 
         project.tasks.configureEach {
-            if (name == "embedAndSignAppleFrameworkForXcode") {
+            if (name == "embedAndSignAppleFrameworkForXcode" || name.startsWith("compileKotlinIos")) {
                 dependsOn(task)
             }
         }
@@ -59,14 +59,13 @@ class KmpSplashPlugin : Plugin<Project> {
 
                 backgroundColor.set(ext.backgroundColor)
                 backgroundColorNight.set(ext.backgroundColorNight)
-
                 resOutputDir.set(project.file("src/androidMain/res"))
-
-                ext.logoFile.orNull?.let { logoPath ->
-                    val logoFile = project.file(logoPath)
-                    logoDrawableName.set(logoFile.nameWithoutExtension)
-                    logoSourceFile.set(logoFile)
-                }
+                logoSourceFile.set(
+                    project.layout.file(ext.logoFile.map { project.file(it) })
+                )
+                logoDrawableName.set(
+                    ext.logoFile.map { project.file(it).nameWithoutExtension }
+                )
             }
         )
 
