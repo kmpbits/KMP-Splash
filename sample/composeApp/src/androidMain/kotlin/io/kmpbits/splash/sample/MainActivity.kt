@@ -1,5 +1,6 @@
 package io.kmpbits.splash.sample
 
+import androidx.activity.compose.setContent
 import androidx.compose.ui.graphics.Color
 import io.kmpbits.splash.SplashActivity
 import kotlinx.coroutines.delay

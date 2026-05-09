@@ -25,7 +25,7 @@ $logoItem
         <item name="postSplashScreenTheme">@style/Theme.App</item>
     </style>
 
-    <style name="Theme.App" parent="Theme.MaterialComponents.DayNight.NoActionBar"/>
+    <style name="Theme.App" parent="Theme.AppCompat.DayNight.NoActionBar"/>
 </resources>"""
     }
 
