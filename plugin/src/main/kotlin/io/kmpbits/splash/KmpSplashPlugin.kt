@@ -36,9 +36,9 @@ class KmpSplashPlugin : Plugin<Project> {
         })
 
         // Hook into the Xcode build lifecycle when the Apple framework task is present.
-        project.tasks.configureEach { t ->
-            if (t.name == "embedAndSignAppleFrameworkForXcode") {
-                t.dependsOn(task)
+        project.tasks.configureEach {
+            if (name == "embedAndSignAppleFrameworkForXcode") {
+                dependsOn(task)
             }
         }
     }
@@ -61,9 +61,9 @@ class KmpSplashPlugin : Plugin<Project> {
             }
         })
 
-        project.tasks.configureEach { t ->
-            if (t.name == "preBuild") {
-                t.dependsOn(task)
+        project.tasks.configureEach {
+            if (name == "preBuild") {
+                dependsOn(task)
             }
         }
     }
