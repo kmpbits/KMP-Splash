@@ -26,7 +26,7 @@ kotlin {
             implementation(libs.coroutines.core)
         }
         androidMain.dependencies {
-            implementation(libs.androidx.activity)
+            implementation(libs.androidx.activity.core)
             implementation(libs.androidx.splashscreen)
         }
     }
