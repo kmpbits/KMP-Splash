@@ -8,7 +8,7 @@ plugins {
 
 splashScreen {
     backgroundColor = "#1A1A2E"
-    iosProjectPath = "iosApp/iosApp"
+    iosProjectPath = "sample/iosApp/iosApp"
 }
 
 kotlin {
