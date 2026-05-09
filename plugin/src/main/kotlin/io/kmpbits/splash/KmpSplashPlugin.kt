@@ -45,12 +45,14 @@ class KmpSplashPlugin : Plugin<Project> {
                         }
                     )
                 )
+                logoFilePath.set(ext.logoFile)
                 logoSourceFile.set(
                     project.layout.file(ext.logoFile.map { project.file(it) })
                 )
                 logoResourceName.set(
                     ext.logoFile.map { project.file(it).nameWithoutExtension }
                 )
+                resourcePackage.set(composeResourcePackage(project))
             }
         )
 
@@ -59,6 +61,13 @@ class KmpSplashPlugin : Plugin<Project> {
                 dependsOn(task)
             }
         }
+    }
+
+    private fun composeResourcePackage(project: Project): String {
+        fun String.normalize() = replace(Regex("[^a-zA-Z0-9]"), "_").lowercase()
+        val root = project.rootProject.name.normalize()
+        val sub = project.path.trimStart(':').split(':').joinToString(".") { it.normalize() }
+        return if (sub.isEmpty()) "$root.generated.resources" else "$root.$sub.generated.resources"
     }
 
     private fun registerAndroidTask(project: Project, ext: KmpSplashExtension) {

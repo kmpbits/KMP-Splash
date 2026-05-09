@@ -9,6 +9,7 @@ plugins {
 splashScreen {
     backgroundColor = "#1A1A2E"
     iosProjectPath = "sample/iosApp/iosApp"
+    logoFile = "src/commonMain/composeResources/drawable/logo.png"
 }
 
 kotlin {
@@ -33,6 +34,7 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
+            implementation(compose.components.resources)
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)

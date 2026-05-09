@@ -2,7 +2,16 @@
 package io.kmpbits.splash
 
 import androidx.compose.ui.graphics.Color
+import kmp_splash.sample.composeapp.generated.resources.Res
+import kmp_splash.sample.composeapp.generated.resources.logo
+import org.jetbrains.compose.resources.painterResource
 
 object SplashConfig {
     val backgroundColor: Color = Color(0xFF1A1A2E)
+
+    init {
+        SplashLogoProvider.current = @androidx.compose.runtime.Composable {
+            painterResource(Res.drawable.logo)
+        }
+    }
 }
