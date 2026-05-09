@@ -20,7 +20,7 @@ class KmpSplashPlugin : Plugin<Project> {
         val iosPath = ext.iosProjectPath.orNull
             ?: error("KmpSplash: iosProjectPath must be set in the splashScreen { } block")
 
-        val task = project.tasks.register("generateLaunchScreen", GenerateLaunchScreenTask::class.java) { t: GenerateLaunchScreenTask ->
+        val task = project.tasks.register("generateLaunchScreen", GenerateLaunchScreenTask::class.java, { t: GenerateLaunchScreenTask ->
             t.group = "kmp-splash"
             t.description = "Generates LaunchScreen.storyboard for iOS"
 
@@ -33,7 +33,7 @@ class KmpSplashPlugin : Plugin<Project> {
                 t.logoResourceName.set(resourceName)
                 t.logoSourceFile.set(logoFile)
             }
-        }
+        })
 
         // Hook into the Xcode build lifecycle when the Apple framework task is present.
         project.tasks.configureEach { t ->
@@ -44,7 +44,7 @@ class KmpSplashPlugin : Plugin<Project> {
     }
 
     private fun registerAndroidTask(project: Project, ext: KmpSplashExtension) {
-        val task = project.tasks.register("generateAndroidSplash", GenerateAndroidSplashTask::class.java) { t: GenerateAndroidSplashTask ->
+        val task = project.tasks.register("generateAndroidSplash", GenerateAndroidSplashTask::class.java, { t: GenerateAndroidSplashTask ->
             t.group = "kmp-splash"
             t.description = "Generates Android splash screen themes.xml"
 
@@ -59,7 +59,7 @@ class KmpSplashPlugin : Plugin<Project> {
                 t.logoDrawableName.set(logoFile.nameWithoutExtension)
                 t.logoSourceFile.set(logoFile)
             }
-        }
+        })
 
         project.tasks.configureEach { t ->
             if (t.name == "preBuild") {
