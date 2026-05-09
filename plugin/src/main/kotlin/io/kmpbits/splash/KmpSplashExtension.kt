@@ -6,8 +6,9 @@ import org.gradle.api.tasks.Optional
 
 abstract class KmpSplashExtension {
 
-    /** Required. Background color in #RRGGBB format. */
+    /** Background color in #RRGGBB format. Defaults to #FFFFFF with a build warning if not set. */
     @get:Input
+    @get:Optional
     abstract val backgroundColor: Property<String>
 
     /**

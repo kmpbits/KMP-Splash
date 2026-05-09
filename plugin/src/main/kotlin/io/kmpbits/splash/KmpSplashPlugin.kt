@@ -24,17 +24,20 @@ class KmpSplashPlugin : Plugin<Project> {
         val task = project.tasks.register(
             "generateLaunchScreen",
             GenerateLaunchScreenTask::class.java,
-            Action<GenerateLaunchScreenTask> { t ->
-                t.group = "kmp-splash"
-                t.description = "Generates LaunchScreen.storyboard for iOS"
+            Action<GenerateLaunchScreenTask> {
+                group = "kmp-splash"
+                description = "Generates LaunchScreen.storyboard and SplashConfig.kt for iOS"
 
-                t.backgroundColor.set(ext.backgroundColor)
-                t.outputFile.set(project.rootProject.file("$iosPath/LaunchScreen.storyboard"))
+                backgroundColor.set(ext.backgroundColor)
+                outputFile.set(project.rootProject.file("$iosPath/LaunchScreen.storyboard"))
+                splashConfigFile.set(
+                    project.file("src/iosMain/kotlin/io/kmpbits/splash/SplashConfig.kt")
+                )
 
                 ext.logoFile.orNull?.let { logoPath ->
                     val logoFile = project.file(logoPath)
-                    t.logoResourceName.set(logoFile.nameWithoutExtension)
-                    t.logoSourceFile.set(logoFile)
+                    logoResourceName.set(logoFile.nameWithoutExtension)
+                    logoSourceFile.set(logoFile)
                 }
             }
         )
@@ -50,19 +53,19 @@ class KmpSplashPlugin : Plugin<Project> {
         val task = project.tasks.register(
             "generateAndroidSplash",
             GenerateAndroidSplashTask::class.java,
-            Action<GenerateAndroidSplashTask> { t ->
-                t.group = "kmp-splash"
-                t.description = "Generates Android splash screen themes.xml"
+            Action<GenerateAndroidSplashTask> {
+                group = "kmp-splash"
+                description = "Generates Android splash screen themes.xml"
 
-                t.backgroundColor.set(ext.backgroundColor)
-                t.backgroundColorNight.set(ext.backgroundColorNight)
+                backgroundColor.set(ext.backgroundColor)
+                backgroundColorNight.set(ext.backgroundColorNight)
 
-                t.resOutputDir.set(project.file("src/androidMain/res"))
+                resOutputDir.set(project.file("src/androidMain/res"))
 
                 ext.logoFile.orNull?.let { logoPath ->
                     val logoFile = project.file(logoPath)
-                    t.logoDrawableName.set(logoFile.nameWithoutExtension)
-                    t.logoSourceFile.set(logoFile)
+                    logoDrawableName.set(logoFile.nameWithoutExtension)
+                    logoSourceFile.set(logoFile)
                 }
             }
         )
