@@ -24,10 +24,8 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(libs.coroutines.core)
-            implementation(libs.lifecycle.viewmodel)
         }
         androidMain.dependencies {
-            implementation(libs.lifecycle.viewmodel.compose)
             implementation(libs.androidx.splashscreen)
         }
     }

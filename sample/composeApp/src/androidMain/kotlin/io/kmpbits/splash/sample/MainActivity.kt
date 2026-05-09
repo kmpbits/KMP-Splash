@@ -1,14 +1,17 @@
 package io.kmpbits.splash.sample
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.ui.graphics.Color
+import io.kmpbits.splash.SplashActivity
+import kotlinx.coroutines.delay
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
-        super.onCreate(savedInstanceState)
+class MainActivity : SplashActivity() {
+
+    override suspend fun isReady(): Boolean {
+        delay(1500) // simulate async work — replace with real logic
+        return true
+    }
+
+    override fun onFinished() {
         setContent {
             App()
         }
