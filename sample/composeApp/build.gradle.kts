@@ -12,6 +12,8 @@ splashScreen {
 }
 
 kotlin {
+    jvmToolchain(17)
+
     androidTarget()
 
     sourceSets {

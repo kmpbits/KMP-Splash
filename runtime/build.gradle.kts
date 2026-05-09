@@ -10,6 +10,8 @@ group = "io.kmpbits"
 version = "0.1.0"
 
 kotlin {
+    jvmToolchain(17)
+
     androidTarget {
         publishLibraryVariants("release")
     }
@@ -36,10 +38,6 @@ android {
     namespace = "io.kmpbits.splash.runtime"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
 }
 
 publishing {
