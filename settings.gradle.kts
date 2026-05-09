@@ -1,17 +1,18 @@
 rootProject.name = "kmp-splash"
 
-include(":plugin")
-include(":runtime")
-include(":sample:composeApp")
-
+// The plugin is developed in-repo — wire it as a composite build so the
+// sample can apply it without publishing to Maven Local first.
 pluginManagement {
+    includeBuild("plugin")
     repositories {
         gradlePluginPortal()
         google()
         mavenCentral()
-        mavenLocal()
     }
 }
+
+include(":runtime")
+include(":sample:composeApp")
 
 dependencyResolutionManagement {
     repositories {
