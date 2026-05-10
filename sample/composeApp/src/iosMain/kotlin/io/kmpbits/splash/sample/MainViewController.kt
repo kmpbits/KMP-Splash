@@ -5,14 +5,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.ComposeUIViewController
-import io.kmpbits.splash.SplashScreen
+import io.kmpbits.splash.SplashConfig
 import kotlinx.coroutines.delay
 
 fun MainViewController() = ComposeUIViewController {
     var splashDone by remember { mutableStateOf(false) }
 
     if (!splashDone) {
-        SplashScreen(
+        SplashConfig(
             isReady = {
                 delay(1000)
                 true

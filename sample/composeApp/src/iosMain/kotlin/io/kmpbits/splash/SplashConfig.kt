@@ -6,21 +6,26 @@ import androidx.compose.ui.graphics.Color
 import kmp_splash.sample.composeapp.generated.resources.Res
 import kmp_splash.sample.composeapp.generated.resources.logo
 import org.jetbrains.compose.resources.painterResource
+import androidx.compose.ui.graphics.painter.Painter
 
-object SplashConfig {
-
-    init {
-        SplashDefaults.backgroundColor = Color(0xFF1A1A2E)
-        SplashDefaults.logoPainter = @androidx.compose.runtime.Composable {
+object SplashDefaults {
+    val backgroundColor = Color(0xFF1A1A2E)
+    val logoPainter: (@Composable () -> Painter?)? = @Composable {
             painterResource(Res.drawable.logo)
         }
-    }
+}
 
+object SplashConfig {
     @Composable
     operator fun invoke(
         isReady: suspend () -> Boolean,
         onFinished: () -> Unit,
     ) {
-        SplashScreen(isReady = isReady, onFinished = onFinished)
+        SplashScreen(
+            isReady = isReady,
+            onFinished = onFinished,
+            backgroundColor = SplashDefaults.backgroundColor,
+            logoPainter = SplashDefaults.logoPainter
+        )
     }
 }

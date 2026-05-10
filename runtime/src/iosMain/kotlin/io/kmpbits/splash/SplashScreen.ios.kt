@@ -8,20 +8,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 
 @Composable
 actual fun SplashScreen(
     isReady: suspend () -> Boolean,
     onFinished: () -> Unit,
+    backgroundColor: Color,
+    logoPainter: (@Composable () -> Painter?)?
 ) {
-    val logo = SplashDefaults.logoPainter?.invoke()
-
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .fillMaxSize()
-            .background(SplashDefaults.backgroundColor),
+            .background(backgroundColor),
     ) {
+        val logo = logoPainter?.invoke()
         if (logo != null) {
             Image(
                 painter = logo,
