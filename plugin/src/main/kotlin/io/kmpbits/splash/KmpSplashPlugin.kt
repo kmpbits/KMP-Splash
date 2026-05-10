@@ -23,6 +23,7 @@ class KmpSplashPlugin : Plugin<Project> {
                 description = "Generates Assets.xcassets launch color and SplashConfig.kt for iOS"
 
                 backgroundColor.set(ext.backgroundColor)
+                backgroundColorNight.set(ext.backgroundColorNight)
                 xcassetsDir.set(
                     project.rootProject.layout.dir(
                         ext.iosProjectPath.map { iosPath ->
