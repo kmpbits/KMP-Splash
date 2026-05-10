@@ -2,6 +2,7 @@ package io.kmpbits.splash
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -14,13 +15,15 @@ fun SplashScreen(
     isReady: suspend () -> Boolean,
     onFinished: () -> Unit,
 ) {
+    val nightColor = SplashDefaults.backgroundColorNight
+    val background = if (nightColor != null && isSystemInDarkTheme()) nightColor else SplashDefaults.backgroundColor
     val logo = SplashDefaults.logoPainter?.invoke()
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .fillMaxSize()
-            .background(SplashDefaults.backgroundColor),
+            .background(background),
     ) {
         if (logo != null) {
             Image(

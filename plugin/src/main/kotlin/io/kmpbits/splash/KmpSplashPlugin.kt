@@ -34,7 +34,7 @@ class KmpSplashPlugin : Plugin<Project> {
                 )
                 splashConfigFile.set(
                     project.layout.buildDirectory
-                        .file("generated/kmpSplash/iosMain/kotlin/io/kmpbits/splash/SplashConfig.kt")
+                        .file("generated/kmpSplash/iosMain/kotlin/io/kmpbits/splash/SplashInit.kt")
                 )
                 pbxprojFile.set(
                     project.rootProject.layout.file(

@@ -6,5 +6,6 @@ import androidx.compose.ui.graphics.painter.Painter
 
 object SplashDefaults {
     var backgroundColor: Color = Color.White
+    var backgroundColorNight: Color? = null
     var logoPainter: (@Composable () -> Painter?)? = null
 }
