@@ -59,6 +59,17 @@ class KmpSplashPlugin : Plugin<Project> {
                         fileName.substringBeforeLast('.')
                     }
                 )
+                logoNightFilePath.set(ext.logoFileNight)
+                logoNightSourceFile.set(
+                    project.layout.file(ext.logoFileNight.map { fileName ->
+                        project.file("src/commonMain/composeResources/drawable/$fileName")
+                    })
+                )
+                logoNightResourceName.set(
+                    ext.logoFileNight.map { fileName ->
+                        fileName.substringBeforeLast('.')
+                    }
+                )
                 resourcePackage.set(composeResourcePackage(project))
             }
         )
@@ -114,6 +125,11 @@ class KmpSplashPlugin : Plugin<Project> {
                     ext.logoFile.map { fileName ->
                         fileName.substringBeforeLast('.')
                     }
+                )
+                logoNightSourceFile.set(
+                    project.layout.file(ext.logoFileNight.map { fileName ->
+                        project.file("src/commonMain/composeResources/drawable/$fileName")
+                    })
                 )
             }
         )

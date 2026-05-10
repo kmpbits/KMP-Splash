@@ -26,10 +26,18 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:Optional
     abstract val logoResourceName: Property<String>
 
+    @get:Input
+    @get:Optional
+    abstract val logoNightResourceName: Property<String>
+
     /** Raw configured path — tracked as @Input so incremental builds re-run on path changes. */
     @get:Input
     @get:Optional
     abstract val logoFilePath: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val logoNightFilePath: Property<String>
 
     /** Compose resources package of the consuming module, e.g. com_example.myapp.generated.resources */
     @get:Input
@@ -39,6 +47,9 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     /** Resolved file handle — @Internal so Gradle skips its own (unfriendly) validation. */
     @get:Internal
     abstract val logoSourceFile: RegularFileProperty
+
+    @get:Internal
+    abstract val logoNightSourceFile: RegularFileProperty
 
     /**
      * Assets.xcassets directory inside the iOS project folder.
@@ -56,7 +67,7 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @TaskAction
     fun generate() {
         val resolvedColor = resolveBackgroundColor()
-        val resolvedLogoName = copyLogoAsset()
+        val resolvedLogoName = copyLogoAssets()
 
         generateColorAsset(resolvedColor)
         patchInfoPlist(xcassetsDir.asFile.get().parentFile.resolve("Info.plist"), resolvedLogoName)
@@ -64,20 +75,37 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
         generateSplashConfig(resolvedColor, resolvedLogoName)
     }
 
-    private fun copyLogoAsset(): String? {
-        val configuredPath = logoFilePath.orNull ?: return null
-        val src = logoSourceFile.asFile.get()
-        if (!src.exists()) {
-            throw GradleException(
-                "KmpSplash: logoFile '$configuredPath' was not found at ${src.absolutePath}.\n" +
-                "  The file must be located in 'src/commonMain/composeResources/drawable/'."
-            )
+    private fun copyLogoAssets(): String? {
+        val lightPath = logoFilePath.orNull
+        val nightPath = logoNightFilePath.orNull
+        if (lightPath == null && nightPath == null) return null
+
+        val xcassets = xcassetsDir.asFile.get()
+        val name = logoResourceName.get() // We use the same name for the imageset
+        val imageset = xcassets.resolve("$name.imageset").also { it.mkdirs() }
+
+        val lightFile = logoSourceFile.asFile.get()
+        if (lightPath != null) {
+            if (!lightFile.exists()) {
+                throw GradleException("KmpSplash: logoFile '$lightPath' not found at ${lightFile.absolutePath}")
+            }
+            lightFile.copyTo(imageset.resolve(lightFile.name), overwrite = true)
         }
-        val name = logoResourceName.get()
-        val imageset = xcassetsDir.asFile.get().resolve("$name.imageset")
-        imageset.mkdirs()
-        src.copyTo(imageset.resolve(src.name), overwrite = true)
-        imageset.resolve("Contents.json").writeText(logoContentsJson(src.name))
+
+        val nightFile = logoNightSourceFile.asFile.get()
+        if (nightPath != null) {
+            if (!nightFile.exists()) {
+                throw GradleException("KmpSplash: logoFileNight '$nightPath' not found at ${nightFile.absolutePath}")
+            }
+            nightFile.copyTo(imageset.resolve(nightFile.name), overwrite = true)
+        }
+
+        imageset.resolve("Contents.json").writeText(
+            logoContentsJson(
+                lightFile.takeIf { lightPath != null }?.name,
+                nightFile.takeIf { nightPath != null }?.name
+            )
+        )
         return name
     }
 
@@ -146,14 +174,20 @@ $lightColorJson$darkColorJson
         val nightColor = backgroundColorNight.orNull
         val nightArgb = if (nightColor != null) "0xFF${nightColor.trimStart('#').uppercase()}" else null
 
+        val logoNightName = logoNightResourceName.orNull
+
         val configFile = splashConfigFile.asFile.get()
         configFile.parentFile.mkdirs()
 
         val resPkg = resourcePackage.orNull
-        val logoImports = if (logoName != null && resPkg != null) """
-import $resPkg.Res
-import $resPkg.$logoName
-import org.jetbrains.compose.resources.painterResource""" else ""
+        val logoImports = mutableListOf<String>()
+        if (resPkg != null) {
+            logoImports.add("import $resPkg.Res")
+            if (logoName != null) logoImports.add("import $resPkg.$logoName")
+            if (logoNightName != null && logoNightName != logoName) logoImports.add("import $resPkg.$logoNightName")
+            if (logoName != null || logoNightName != null) logoImports.add("import org.jetbrains.compose.resources.painterResource")
+        }
+        val logoImportsStr = if (logoImports.isNotEmpty()) logoImports.joinToString("\n", prefix = "\n") else ""
 
         val bgColorLine = "    SplashDefaults.backgroundColor = Color($lightArgb)"
         val nightColorLine = if (nightArgb != null) {
@@ -164,19 +198,23 @@ import org.jetbrains.compose.resources.painterResource""" else ""
             "\n    SplashDefaults.logoPainter = @Composable { painterResource(Res.drawable.$logoName) }"
         } else ""
 
+        val logoNightLine = if (logoNightName != null && resPkg != null) {
+            "\n    SplashDefaults.logoPainterNight = @Composable { painterResource(Res.drawable.$logoNightName) }"
+        } else ""
+
         configFile.writeText(
             """// Generated by kmp-splash — do not edit manually
 package io.kmpbits.splash
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color$logoImports
+import androidx.compose.ui.graphics.Color$logoImportsStr
 import kotlin.native.EagerInitialization
 
 @Suppress("DEPRECATION")
 @OptIn(ExperimentalStdlibApi::class)
 @EagerInitialization
 private val _kmpSplashInit: Unit = run {
-$bgColorLine$nightColorLine$logoLine
+$bgColorLine$nightColorLine$logoLine$logoNightLine
 }
 """
         )
@@ -316,12 +354,27 @@ $bgColorLine$nightColorLine$logoLine
         return Triple(channel(0), channel(2), channel(4))
     }
 
-    private fun logoContentsJson(filename: String) = """{
+    private fun logoContentsJson(lightName: String?, nightName: String?): String {
+        val images = mutableListOf<String>()
+
+        if (lightName != null) {
+            images.add("""{ "idiom": "universal", "filename": "$lightName", "scale": "1x" }""")
+            images.add("""{ "idiom": "universal", "filename": "$lightName", "scale": "2x" }""")
+            images.add("""{ "idiom": "universal", "filename": "$lightName", "scale": "3x" }""")
+        }
+
+        if (nightName != null) {
+            val appearance = """ "appearances": [ { "appearance": "luminosity", "value": "dark" } ], """
+            images.add("""{ $appearance "idiom": "universal", "filename": "$nightName", "scale": "1x" }""")
+            images.add("""{ $appearance "idiom": "universal", "filename": "$nightName", "scale": "2x" }""")
+            images.add("""{ $appearance "idiom": "universal", "filename": "$nightName", "scale": "3x" }""")
+        }
+
+        return """{
   "images": [
-    { "idiom": "universal", "filename": "$filename", "scale": "1x" },
-    { "idiom": "universal", "filename": "$filename", "scale": "2x" },
-    { "idiom": "universal", "filename": "$filename", "scale": "3x" }
+    ${images.joinToString(",\n    ")}
   ],
   "info": { "author": "kmp-splash", "version": 1 }
 }"""
+    }
 }

@@ -8,4 +8,5 @@ object SplashDefaults {
     var backgroundColor: Color = Color.White
     var backgroundColorNight: Color? = null
     var logoPainter: (@Composable () -> Painter?)? = null
+    var logoPainterNight: (@Composable () -> Painter?)? = null
 }

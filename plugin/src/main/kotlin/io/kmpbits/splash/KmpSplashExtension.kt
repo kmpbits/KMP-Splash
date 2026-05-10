@@ -20,6 +20,14 @@ abstract class KmpSplashExtension {
     abstract val logoFile: Property<String>
 
     /**
+     * Optional logo for dark mode. If set, this file will be used when the system is in dark mode.
+     * Must be located in `src/commonMain/composeResources/drawable/`.
+     */
+    @get:Input
+    @get:Optional
+    abstract val logoFileNight: Property<String>
+
+    /**
      * Path to the Xcode project folder that contains `Info.plist`, e.g. "iosApp/iosApp".
      * The storyboard is written to `<iosProjectPath>/LaunchScreen.storyboard`.
      */

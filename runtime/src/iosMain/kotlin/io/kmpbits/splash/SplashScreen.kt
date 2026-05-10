@@ -17,7 +17,13 @@ fun SplashScreen(
 ) {
     val nightColor = SplashDefaults.backgroundColorNight
     val background = if (nightColor != null && isSystemInDarkTheme()) nightColor else SplashDefaults.backgroundColor
-    val logo = SplashDefaults.logoPainter?.invoke()
+    
+    val logoNight = SplashDefaults.logoPainterNight
+    val logo = if (logoNight != null && isSystemInDarkTheme()) {
+        logoNight.invoke()
+    } else {
+        SplashDefaults.logoPainter?.invoke()
+    }
 
     Box(
         contentAlignment = Alignment.Center,
