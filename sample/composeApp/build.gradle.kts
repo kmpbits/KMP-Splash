@@ -10,7 +10,7 @@ splashScreen {
     backgroundColor = "#FFFFFF"
     backgroundColorNight = "#1A1A2E"
     iosProjectPath = "sample/iosApp/iosApp"
-    logoFile = "src/commonMain/composeResources/drawable/logo.png"
+    logoFile = "logo.png"
 }
 
 kotlin {

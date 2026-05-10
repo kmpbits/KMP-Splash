@@ -12,8 +12,8 @@ abstract class KmpSplashExtension {
     abstract val backgroundColor: Property<String>
 
     /**
-     * Path to the logo relative to the module root, e.g. "drawable/splash_logo.png".
-     * The file will be copied into the right resource directory on each platform.
+     * Name of the logo file (with extension) located in `src/commonMain/composeResources/drawable/`.
+     * e.g. "logo.png".
      */
     @get:Input
     @get:Optional

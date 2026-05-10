@@ -70,7 +70,7 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
         if (!src.exists()) {
             throw GradleException(
                 "KmpSplash: logoFile '$configuredPath' was not found at ${src.absolutePath}.\n" +
-                "  The path must be relative to the module directory (e.g. 'src/commonMain/composeResources/drawable/logo.png')."
+                "  The file must be located in 'src/commonMain/composeResources/drawable/'."
             )
         }
         val name = logoResourceName.get()

@@ -77,12 +77,17 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
         }
 
         logoSourceFile.orNull?.asFile?.let { src ->
-            if (src.exists()) {
-                val drawableDir = resDir.resolve("drawable").also { it.mkdirs() }
-                val destFile = drawableDir.resolve("ic_kmp_splash_logo.${src.extension}")
-                src.copyTo(destFile, overwrite = true)
-                logger.lifecycle("KmpSplash: copied logo to ${destFile.absolutePath}")
+            if (!src.exists()) {
+                val configuredName = logoDrawableName.get()
+                throw org.gradle.api.GradleException(
+                    "KmpSplash: logoFile '$configuredName' was not found at ${src.absolutePath}.\n" +
+                    "  The file must be located in 'src/commonMain/composeResources/drawable/'."
+                )
             }
+            val drawableDir = resDir.resolve("drawable").also { it.mkdirs() }
+            val destFile = drawableDir.resolve("ic_kmp_splash_logo.${src.extension}")
+            src.copyTo(destFile, overwrite = true)
+            logger.lifecycle("KmpSplash: copied logo to ${destFile.absolutePath}")
         }
 
         generateManifest()

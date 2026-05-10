@@ -50,10 +50,14 @@ class KmpSplashPlugin : Plugin<Project> {
                 )
                 logoFilePath.set(ext.logoFile)
                 logoSourceFile.set(
-                    project.layout.file(ext.logoFile.map { project.file(it) })
+                    project.layout.file(ext.logoFile.map { fileName ->
+                        project.file("src/commonMain/composeResources/drawable/$fileName")
+                    })
                 )
                 logoResourceName.set(
-                    ext.logoFile.map { project.file(it).nameWithoutExtension }
+                    ext.logoFile.map { fileName ->
+                        fileName.substringBeforeLast('.')
+                    }
                 )
                 resourcePackage.set(composeResourcePackage(project))
             }
@@ -102,10 +106,14 @@ class KmpSplashPlugin : Plugin<Project> {
                 resourcePackage.set(composeResourcePackage(project))
 
                 logoSourceFile.set(
-                    project.layout.file(ext.logoFile.map { project.file(it) })
+                    project.layout.file(ext.logoFile.map { fileName ->
+                        project.file("src/commonMain/composeResources/drawable/$fileName")
+                    })
                 )
                 logoDrawableName.set(
-                    ext.logoFile.map { project.file(it).nameWithoutExtension }
+                    ext.logoFile.map { fileName ->
+                        fileName.substringBeforeLast('.')
+                    }
                 )
             }
         )

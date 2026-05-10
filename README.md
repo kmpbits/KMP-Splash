@@ -41,7 +41,7 @@ plugins {
 splashScreen {
     backgroundColor = "#FFFFFF"           // Light mode background
     backgroundColorNight = "#1A1A2E"      // Optional: dark mode background
-    logoFile = "src/commonMain/composeResources/drawable/logo.png"
+    logoFile = "logo.png"                 // File name in src/commonMain/composeResources/drawable/
     iosProjectPath = "iosApp/iosApp"      // Path to the folder containing Info.plist
 }
 ```
