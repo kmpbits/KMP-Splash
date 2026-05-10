@@ -3,11 +3,13 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
-    `maven-publish`
+    alias(libs.plugins.maven.publish)
 }
 
-group = "io.kmpbits"
-version = "0.1.0"
+val kmpSplashVersion: String by project
+
+group = "io.github.kmpbits"
+version = kmpSplashVersion
 
 kotlin {
     jvmToolchain(17)
@@ -40,6 +42,33 @@ android {
     defaultConfig { minSdk = 24 }
 }
 
-publishing {
-    repositories { mavenLocal() }
+mavenPublishing {
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
+    coordinates("io.github.kmpbits", "splash-runtime", kmpSplashVersion)
+
+    pom {
+        name = "KMP Splash"
+        description = "Splash screen plugin for Compose Multiplatform — no Xcode required"
+        url = "https://github.com/kmpbits/KMP-Splash"
+        inceptionYear = "2025"
+        licenses {
+            license {
+                name = "Apache License, Version 2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0"
+            }
+        }
+        developers {
+            developer {
+                id = "kmpbits"
+                name = "KMP Bits"
+                url = "https://github.com/kmpbits/"
+            }
+        }
+        scm {
+            url = "https://github.com/kmpbits/KMP-Splash"
+            connection = "scm:git:git://github.com/kmpbits/KMP-Splash.git"
+            developerConnection = "scm:git:ssh://git@github.com/kmpbits/KMP-Splash.git"
+        }
+    }
 }

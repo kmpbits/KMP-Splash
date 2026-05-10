@@ -5,6 +5,8 @@ compose-multiplatform = "1.7.3"
 coroutines = "1.10.1"
 lifecycle = "2.8.4"
 splashscreen = "1.0.1"
+maven-publish = "0.30.0"
+kmp-splash = "0.1.0-alpha01" # keep in sync with gradle.properties
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -25,4 +27,5 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-kmp-splash = { id = "io.kmpbits.splash", version = "0.1.0" }
+kmp-splash = { id = "io.kmpbits.splash", version.ref = "kmp-splash" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }

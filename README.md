@@ -35,7 +35,7 @@ In your Compose App module `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("io.kmpbits.splash") version "0.1.0"
+    id("io.kmpbits.splash") version "0.1.0-alpha01"
 }
 
 splashScreen {
