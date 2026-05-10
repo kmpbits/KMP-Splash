@@ -11,6 +11,7 @@ class KmpSplashPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         val ext = project.extensions.create("splashScreen", KmpSplashExtension::class.java)
+        ext.iosProjectPath.convention("iosApp/iosApp")
         registerIosTask(project, ext)
         registerAndroidTask(project, ext)
     }

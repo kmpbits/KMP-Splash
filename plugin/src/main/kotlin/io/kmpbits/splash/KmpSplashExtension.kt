@@ -27,8 +27,8 @@ abstract class KmpSplashExtension {
     abstract val logoFileNight: Property<String>
 
     /**
-     * Path to the Xcode project folder that contains `Info.plist`, e.g. "iosApp/iosApp".
-     * The storyboard is written to `<iosProjectPath>/LaunchScreen.storyboard`.
+     * Path to the Xcode project folder that contains `Info.plist`.
+     * Defaults to `"iosApp/iosApp"`.
      */
     @get:Input
     abstract val iosProjectPath: Property<String>

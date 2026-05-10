@@ -43,7 +43,7 @@ splashScreen {
     backgroundColorNight = "#1A1A2E"      // Optional: dark mode background
     logoFile = "logo.png"                 // File name in src/commonMain/composeResources/drawable/
     logoFileNight = "logo_dark.png"       // Optional: dark mode logo
-    iosProjectPath = "iosApp/iosApp"      // Path to the folder containing Info.plist
+    iosProjectPath = "iosApp/iosApp"      // Optional: defaults to "iosApp/iosApp"
 }
 ```
 
