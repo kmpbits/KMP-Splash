@@ -130,12 +130,13 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
   "colors": [
 $lightColorJson$darkColorJson
   ],
-  "info": { "author": "kmp-splash", "version": 1 }
+  "info": { "author": "xcode", "version": 1 }
 }""".trimIndent())
+        
         val appiconset = xcassets.resolve("AppIcon.appiconset")
         if (!appiconset.exists()) {
             appiconset.mkdirs()
-            appiconset.resolve("Contents.json").writeText("""{"images":[],"info":{"author":"kmp-splash","version":1}}""")
+            appiconset.resolve("Contents.json").writeText("""{"images":[],"info":{"author":"xcode","version":1}}""")
         }
         logger.lifecycle("KmpSplash: wrote SplashBackground color asset")
     }
@@ -156,8 +157,8 @@ import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.graphics.painter.Painter""" else ""
 
         val logoPainterValue = if (logoName != null && resPkg != null) """@Composable {
-            painterResource(Res.drawable.$logoName)
-        }""" else "null"
+        painterResource(Res.drawable.$logoName)
+    }""" else "null"
 
         val bgColorLogic = if (nightArgb != null) {
             "if (isSystemInDarkTheme()) Color($nightArgb) else Color($lightArgb)"
@@ -171,14 +172,13 @@ package io.kmpbits.splash
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color$logoImports
 
-object SplashDefaults {
-    val backgroundColor: Color
-        @Composable get() = $bgColorLogic
-
-    val logoPainter: (@Composable () -> Painter?)? = $logoPainterValue
-}
+class SplashDefaults(
+    val backgroundColor: Color,
+    val logoPainter: (@Composable () -> Painter?)? = null
+)
 
 object SplashConfig {
     @Composable
@@ -186,12 +186,18 @@ object SplashConfig {
         isReady: suspend () -> Boolean,
         onFinished: () -> Unit,
     ) {
-        SplashScreen(
-            isReady = isReady,
-            onFinished = onFinished,
-            backgroundColor = SplashDefaults.backgroundColor,
-            logoPainter = SplashDefaults.logoPainter
-        )
+        val backgroundColor = $bgColorLogic
+        val logoPainter = $logoPainterValue
+
+        CompositionLocalProvider(
+            LocalSplashBackgroundColor provides backgroundColor,
+            LocalSplashLogoPainter provides logoPainter
+        ) {
+            SplashScreen(
+                isReady = isReady,
+                onFinished = onFinished,
+            )
+        }
     }
 }
 """
@@ -325,7 +331,10 @@ object SplashConfig {
         val clean = hex.trimStart('#').also {
             require(it.length == 6) { "backgroundColor must be #RRGGBB, got: $hex" }
         }
-        fun channel(start: Int) = (clean.substring(start, start + 2).toInt(16) / 255.0).toString()
+        fun channel(start: Int): String {
+            val value = clean.substring(start, start + 2).toInt(16) / 255.0
+            return "%.3f".format(java.util.Locale.US, value)
+        }
         return Triple(channel(0), channel(2), channel(4))
     }
 

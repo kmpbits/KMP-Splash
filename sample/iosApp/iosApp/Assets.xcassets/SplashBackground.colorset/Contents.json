@@ -4,7 +4,7 @@
     {
       "color": {
         "color-space": "srgb",
-        "components": { "alpha": "1.000", "red": "1.0", "green": "1.0", "blue": "1.0" }
+        "components": { "alpha": "1.000", "red": "1.000", "green": "1.000", "blue": "1.000" }
       },
       "idiom": "universal"
     },
@@ -12,10 +12,10 @@
       "appearances": [ { "appearance": "luminosity", "value": "dark" } ],
       "color": {
         "color-space": "srgb",
-        "components": { "alpha": "1.000", "red": "0.10196078431372549", "green": "0.10196078431372549", "blue": "0.1803921568627451" }
+        "components": { "alpha": "1.000", "red": "0.102", "green": "0.102", "blue": "0.180" }
       },
       "idiom": "universal"
     }
   ],
-  "info": { "author": "kmp-splash", "version": 1 }
+  "info": { "author": "xcode", "version": 1 }
 }

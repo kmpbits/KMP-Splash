@@ -14,7 +14,7 @@ fun MainViewController() = ComposeUIViewController {
     if (!splashDone) {
         SplashConfig(
             isReady = {
-                delay(1000)
+                delay(2000)
                 true
             },
             onFinished = { splashDone = true },

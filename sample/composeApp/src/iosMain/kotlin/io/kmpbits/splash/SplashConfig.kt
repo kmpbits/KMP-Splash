@@ -3,20 +3,17 @@ package io.kmpbits.splash
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import kmp_splash.sample.composeapp.generated.resources.Res
 import kmp_splash.sample.composeapp.generated.resources.logo
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.graphics.painter.Painter
 
-object SplashDefaults {
-    val backgroundColor: Color
-        @Composable get() = if (isSystemInDarkTheme()) Color(0xFF1A1A2E) else Color(0xFFFFFFFF)
-
-    val logoPainter: (@Composable () -> Painter?)? = @Composable {
-            painterResource(Res.drawable.logo)
-        }
-}
+class SplashDefaults(
+    val backgroundColor: Color,
+    val logoPainter: (@Composable () -> Painter?)? = null
+)
 
 object SplashConfig {
     @Composable
@@ -24,11 +21,19 @@ object SplashConfig {
         isReady: suspend () -> Boolean,
         onFinished: () -> Unit,
     ) {
-        SplashScreen(
-            isReady = isReady,
-            onFinished = onFinished,
-            backgroundColor = SplashDefaults.backgroundColor,
-            logoPainter = SplashDefaults.logoPainter
-        )
+        val backgroundColor = if (isSystemInDarkTheme()) Color(0xFF1A1A2E) else Color(0xFFFFFFFF)
+        val logoPainter = @Composable {
+        painterResource(Res.drawable.logo)
+    }
+
+        CompositionLocalProvider(
+            LocalSplashBackgroundColor provides backgroundColor,
+            LocalSplashLogoPainter provides logoPainter
+        ) {
+            SplashScreen(
+                isReady = isReady,
+                onFinished = onFinished,
+            )
+        }
     }
 }
