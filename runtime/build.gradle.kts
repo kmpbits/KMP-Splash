@@ -44,7 +44,7 @@ android {
 
 mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
-    signAllPublications()
+    if (project.hasProperty("signingInMemoryKey")) signAllPublications()
     coordinates("io.github.kmpbits", "splash-runtime", kmpSplashVersion)
 
     pom {

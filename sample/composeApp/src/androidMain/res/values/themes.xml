@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.App.SplashScreen" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#1A1A2E</item>
+        <item name="windowSplashScreenBackground">#FFFFFF</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/logo</item>
         <item name="postSplashScreenTheme">@style/Theme.App</item>
     </style>
 
-    <style name="Theme.App" parent="Theme.AppCompat.Light.NoActionBar"/>
+    <style name="Theme.App" parent="android:Theme.Material.NoActionBar"/>
 </resources>

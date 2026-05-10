@@ -25,7 +25,7 @@ $logoItem
         <item name="postSplashScreenTheme">@style/Theme.App</item>
     </style>
 
-    <style name="Theme.App" parent="Theme.AppCompat.Light.NoActionBar"/>
+    <style name="Theme.App" parent="android:Theme.Material.NoActionBar"/>
 </resources>"""
     }
 
