@@ -6,7 +6,7 @@ object SplashConfig {
     @Composable
     operator fun invoke(
         isReady: suspend () -> Boolean,
-        onFinished: () -> Unit,
+        onFinished: () -> Unit = {},
     ) {
         SplashScreen(isReady = isReady, onFinished = onFinished)
     }

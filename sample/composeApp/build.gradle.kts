@@ -37,6 +37,8 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
+            implementation(libs.lifecycle.viewmodel)
+            implementation(libs.lifecycle.viewmodel.compose)
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)

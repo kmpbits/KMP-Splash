@@ -1,14 +1,16 @@
 package io.kmpbits.splash.sample
 
 import androidx.activity.compose.setContent
-import androidx.compose.ui.graphics.Color
+import androidx.activity.viewModels
 import io.kmpbits.splash.SplashActivity
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 class MainActivity : SplashActivity() {
 
+    private val viewModel: SplashViewModel by viewModels()
+
     override suspend fun isReady(): Boolean {
-        delay(1500) // simulate async work — replace with real logic
+        viewModel.isLoading.first { !it }
         return true
     }
 

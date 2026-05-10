@@ -5,19 +5,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.ComposeUIViewController
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.kmpbits.splash.SplashConfig
 import kotlinx.coroutines.delay
 
 fun MainViewController() = ComposeUIViewController {
-    var splashDone by remember { mutableStateOf(false) }
+    val viewModel = viewModel { SplashViewModel() }
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
-    if (!splashDone) {
+    if (isLoading) {
         SplashConfig(
-            isReady = {
-                delay(2000)
-                true
+            isReady = { !isLoading },
+            onFinished = {
+                // Not needed here. The ViewModel manages the loading state.
             },
-            onFinished = { splashDone = true },
         )
     } else {
         App()
