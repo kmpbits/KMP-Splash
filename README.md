@@ -22,7 +22,7 @@ Creating a seamless startup experience in Compose Multiplatform is notoriously d
 
 - Kotlin **2.1.0+**
 - Compose Multiplatform **1.7.0+**
-- Android: `androidx.core:core-splashscreen` **1.0.1+**
+- Android: `androidx.core:core-splashscreen` **1.2.0+**
 - iOS: Xcode 14+ (uses `UILaunchScreen` plist key)
 
 ---
