@@ -23,8 +23,14 @@ class KmpSplashPlugin : Plugin<Project> {
                 group = "kmp-splash"
                 description = "Generates Assets.xcassets launch color and SplashConfig.kt for iOS"
 
+                if (!ext.backgroundColor.isPresent) {
+                    // This will be caught by the task, but we can set a dummy here to avoid Gradle validation errors
+                    // if the task isn't actually run.
+                }
+
                 backgroundColor.set(ext.backgroundColor)
                 backgroundColorNight.set(ext.backgroundColorNight)
+
                 xcassetsDir.set(
                     project.rootProject.layout.dir(
                         ext.iosProjectPath.map { iosPath ->

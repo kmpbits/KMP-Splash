@@ -57,6 +57,10 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
 
     @TaskAction
     fun generate() {
+        if (!backgroundColor.isPresent) {
+            throw org.gradle.api.GradleException("KmpSplash: 'backgroundColor' is mandatory in splashScreen { ... } block.")
+        }
+
         val resDir = resOutputDir.asFile.get()
         val androidLogoName = logoDrawableName.orNull?.let { "ic_kmp_splash_logo" }
 

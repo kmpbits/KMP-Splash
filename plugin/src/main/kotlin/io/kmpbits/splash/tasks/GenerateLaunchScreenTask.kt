@@ -66,6 +66,14 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
 
     @TaskAction
     fun generate() {
+        if (!backgroundColor.isPresent) {
+            throw GradleException("KmpSplash: 'backgroundColor' is mandatory in splashScreen { ... } block.")
+        }
+        if (!logoFilePath.isPresent && !logoNightFilePath.isPresent) {
+            // Optional but good to know
+            logger.warn("KmpSplash: No logo file provided. The splash screen will be a solid color.")
+        }
+
         val resolvedColor = resolveBackgroundColor()
         val resolvedLogoName = copyLogoAssets()
 
@@ -84,16 +92,16 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
         val name = logoResourceName.get() // We use the same name for the imageset
         val imageset = xcassets.resolve("$name.imageset").also { it.mkdirs() }
 
-        val lightFile = logoSourceFile.asFile.get()
-        if (lightPath != null) {
+        val lightFile = if (lightPath != null) logoSourceFile.asFile.get() else null
+        if (lightFile != null) {
             if (!lightFile.exists()) {
                 throw GradleException("KmpSplash: logoFile '$lightPath' not found at ${lightFile.absolutePath}")
             }
             lightFile.copyTo(imageset.resolve(lightFile.name), overwrite = true)
         }
 
-        val nightFile = logoNightSourceFile.asFile.get()
-        if (nightPath != null) {
+        val nightFile = if (nightPath != null) logoNightSourceFile.asFile.get() else null
+        if (nightFile != null) {
             if (!nightFile.exists()) {
                 throw GradleException("KmpSplash: logoFileNight '$nightPath' not found at ${nightFile.absolutePath}")
             }
@@ -102,8 +110,8 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
 
         imageset.resolve("Contents.json").writeText(
             logoContentsJson(
-                lightFile.takeIf { lightPath != null }?.name,
-                nightFile.takeIf { nightPath != null }?.name
+                lightFile?.name,
+                nightFile?.name
             )
         )
         return name
