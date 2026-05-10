@@ -1,13 +1,9 @@
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinMultiplatform
-
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.maven.publish)
-    alias(libs.plugins.dokka)
 }
 
 val kmpSplashVersion: String by project
@@ -50,7 +46,6 @@ mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
     if (project.hasProperty("signingInMemoryKey")) signAllPublications()
     coordinates("io.github.kmpbits", "splash-runtime", kmpSplashVersion)
-    configure(KotlinMultiplatform(javadocJar = JavadocJar.Dokka("dokkaHtml")))
 
     pom {
         name = "KMP Splash"

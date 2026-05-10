@@ -6,7 +6,6 @@ coroutines = "1.10.1"
 lifecycle = "2.8.4"
 splashscreen = "1.2.0"
 maven-publish = "0.30.0"
-dokka = "2.1.0"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -28,4 +27,3 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
