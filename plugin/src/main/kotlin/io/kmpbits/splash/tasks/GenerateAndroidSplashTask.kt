@@ -38,6 +38,15 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
     @get:Optional
     abstract val splashConfigFile: RegularFileProperty
 
+    @get:OutputFile
+    @get:Optional
+    abstract val manifestFile: RegularFileProperty
+
+    @get:InputFile
+    @get:Optional
+    @get:org.gradle.api.tasks.PathSensitive(org.gradle.api.tasks.PathSensitivity.RELATIVE)
+    abstract val inputManifestFile: RegularFileProperty
+
     /** Points to the androidMain/res directory of the consuming module. */
     @get:OutputDirectory
     abstract val resOutputDir: DirectoryProperty
@@ -76,7 +85,17 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
             }
         }
 
+        generateManifest()
         generateSplashConfig()
+    }
+
+    private fun generateManifest() {
+        val file = manifestFile.orNull?.asFile ?: return
+        val baseContent = inputManifestFile.orNull?.asFile?.takeIf { it.exists() }?.readText()
+        
+        file.parentFile.mkdirs()
+        file.writeText(AndroidSplashTemplate.generateManifest(baseContent))
+        logger.lifecycle("KmpSplash: wrote ${file.absolutePath}")
     }
 
     private fun generateSplashConfig() {

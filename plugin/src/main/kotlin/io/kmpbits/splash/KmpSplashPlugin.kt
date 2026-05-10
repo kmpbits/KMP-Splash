@@ -85,6 +85,7 @@ class KmpSplashPlugin : Plugin<Project> {
     private fun registerAndroidTask(project: Project, ext: KmpSplashExtension) {
         val generatedResDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/res")
         val generatedKotlinDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/kotlin")
+        val generatedManifestDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/manifest")
 
         val task = project.tasks.register(
             "generateAndroidSplash",
@@ -97,6 +98,7 @@ class KmpSplashPlugin : Plugin<Project> {
                 backgroundColorNight.set(ext.backgroundColorNight)
                 resOutputDir.set(generatedResDir)
                 splashConfigFile.set(generatedKotlinDir.map { it.file("io/kmpbits/splash/SplashInit.kt") })
+                manifestFile.set(generatedManifestDir.map { it.file("AndroidManifest.xml") })
                 resourcePackage.set(composeResourcePackage(project))
 
                 logoSourceFile.set(
@@ -120,8 +122,32 @@ class KmpSplashPlugin : Plugin<Project> {
                 try {
                     val sourceSets = android.javaClass.getMethod("getSourceSets").invoke(android) as org.gradle.api.NamedDomainObjectContainer<*>
                     val main = sourceSets.getByName("main")
+                    
+                    // Capture original manifest before we redirect it
+                    val getManifest = main.javaClass.getMethod("getManifest")
+                    val manifestObj = getManifest.invoke(main)
+                    val getSrcFile = manifestObj.javaClass.getMethod("getSrcFile")
+                    val originalManifest = getSrcFile.invoke(manifestObj) as java.io.File
+                    
+                    val manifestToUse = if (originalManifest.exists()) {
+                        originalManifest
+                    } else {
+                        project.file("src/androidMain/AndroidManifest.xml").takeIf { it.exists() }
+                    }
+
+                    if (manifestToUse != null) {
+                        task.configure {
+                            inputManifestFile.set(manifestToUse)
+                        }
+                    }
+
+                    // Add generated res
                     val res = main.javaClass.getMethod("getRes").invoke(main)
                     res.javaClass.getMethod("srcDir", Any::class.java).invoke(res, generatedResDir)
+
+                    // Add generated manifest (replaces original in AGP's view, so we copied it in the task)
+                    val srcFile = manifestObj.javaClass.getMethod("srcFile", Any::class.java)
+                    srcFile.invoke(manifestObj, generatedManifestDir.map { it.file("AndroidManifest.xml") })
                 } catch (_: Exception) {
                 }
             }

@@ -52,4 +52,37 @@ $logoItem
     </style>
 </resources>"""
     }
+
+    /**
+     * Generates a manifest by patching the [baseContent] or creating a new one.
+     * It ensures the `<application>` tag has the correct splash theme.
+     */
+    fun generateManifest(baseContent: String?): String {
+        val splashTheme = "@style/Theme.App.SplashScreen"
+        val themeAttr = "android:theme=\"$splashTheme\""
+        
+        if (baseContent == null) {
+            return """<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application $themeAttr />
+</manifest>"""
+        }
+
+        // Find the <application ... > tag
+        val applicationTagRegex = """<application(\s+[^>]*?)(/?)>""".toRegex(RegexOption.DOT_MATCHES_ALL)
+        
+        return applicationTagRegex.replace(baseContent) { match ->
+            val attrs = match.groups[1]?.value ?: ""
+            val selfClosing = match.groups[2]?.value ?: ""
+            val themeRegex = """android:theme="[^"]*"""".toRegex()
+            
+            val newAttrs = if (themeRegex.containsMatchIn(attrs)) {
+                themeRegex.replace(attrs, themeAttr)
+            } else {
+                // Prepend theme for visibility
+                " $themeAttr$attrs"
+            }
+            "<application$newAttrs$selfClosing>"
+        }
+    }
 }
