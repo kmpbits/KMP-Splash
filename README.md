@@ -58,13 +58,22 @@ androidMain.dependencies {
 }
 ```
 
-### 3. Run the generation task
+### 3. Run the generation task (Optional)
+
+KMP Splash is integrated into the Gradle build process. On both **Android** and **iOS**, the splash assets are generated automatically when you build or run your app.
+
+If you ever want to trigger the generation manually, you can run:
 
 ```bash
+# Generate iOS assets (Info.plist, pbxproj, xcassets)
 ./gradlew generateLaunchScreen
+
+# Generate Android assets (themes.xml, logo)
+./gradlew generateAndroidSplash
 ```
 
-This patches `Info.plist`, `project.pbxproj`, and generates the iOS assets. You only need to re-run it when you change the splash configuration.
+> [!IMPORTANT]
+> **iOS Simulator Caching:** iOS heavily caches the launch screen. If you change the background color or logo and don't see the changes in the simulator, you must **restart the simulator** (or sometimes even delete and reinstall the app) for the new assets to be reflected.
 
 ---
 
