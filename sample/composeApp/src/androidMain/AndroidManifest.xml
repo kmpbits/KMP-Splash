@@ -3,7 +3,7 @@
 
     <application
         android:label="KmpSplash Sample"
-        android:theme="@style/Theme.App.SplashScreen"
+        android:theme="@android:style/Theme.Material.NoActionBar"
         android:supportsRtl="true">
 
         <activity
