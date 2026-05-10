@@ -11,7 +11,6 @@ splashScreen {
     backgroundColorNight = "#1A1A2E"
     iosProjectPath = "sample/iosApp/iosApp"
     logoFile = "logo.png"
-    logoFileNight = "logo.png"
 }
 
 kotlin {
