@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 
 @Composable
-actual fun SplashScreen(
+fun SplashScreen(
     isReady: suspend () -> Boolean,
     onFinished: () -> Unit,
     backgroundColor: Color,
