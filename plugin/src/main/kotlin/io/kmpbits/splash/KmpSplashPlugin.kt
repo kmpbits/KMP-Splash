@@ -83,16 +83,22 @@ class KmpSplashPlugin : Plugin<Project> {
     }
 
     private fun registerAndroidTask(project: Project, ext: KmpSplashExtension) {
+        val generatedResDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/res")
+        val generatedKotlinDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/kotlin")
+
         val task = project.tasks.register(
             "generateAndroidSplash",
             GenerateAndroidSplashTask::class.java,
             Action<GenerateAndroidSplashTask> {
                 group = "kmp-splash"
-                description = "Generates Android splash screen themes.xml"
+                description = "Generates Android splash screen theme.xml"
 
                 backgroundColor.set(ext.backgroundColor)
                 backgroundColorNight.set(ext.backgroundColorNight)
-                resOutputDir.set(project.file("src/androidMain/res"))
+                resOutputDir.set(generatedResDir)
+                splashConfigFile.set(generatedKotlinDir.map { it.file("io/kmpbits/splash/SplashInit.kt") })
+                resourcePackage.set(composeResourcePackage(project))
+
                 logoSourceFile.set(
                     project.layout.file(ext.logoFile.map { project.file(it) })
                 )
@@ -101,6 +107,25 @@ class KmpSplashPlugin : Plugin<Project> {
                 )
             }
         )
+
+        project.extensions.configure(KotlinMultiplatformExtension::class.java) {
+            sourceSets.matching { it.name == "androidMain" }.configureEach {
+                kotlin.srcDir(generatedKotlinDir)
+            }
+        }
+
+        project.plugins.withId("com.android.base") {
+            val android = project.extensions.findByName("android")
+            if (android != null) {
+                try {
+                    val sourceSets = android.javaClass.getMethod("getSourceSets").invoke(android) as org.gradle.api.NamedDomainObjectContainer<*>
+                    val main = sourceSets.getByName("main")
+                    val res = main.javaClass.getMethod("getRes").invoke(main)
+                    res.javaClass.getMethod("srcDir", Any::class.java).invoke(res, generatedResDir)
+                } catch (_: Exception) {
+                }
+            }
+        }
 
         project.tasks.configureEach {
             if (name == "preBuild") {
