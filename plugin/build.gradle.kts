@@ -8,6 +8,10 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
+}
+
 group = "io.kmpbits"
 version = "0.1.0"
 

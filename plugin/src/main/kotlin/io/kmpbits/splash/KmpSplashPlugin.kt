@@ -5,6 +5,7 @@ import io.kmpbits.splash.tasks.GenerateLaunchScreenTask
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 class KmpSplashPlugin : Plugin<Project> {
 
@@ -32,7 +33,8 @@ class KmpSplashPlugin : Plugin<Project> {
                     )
                 )
                 splashConfigFile.set(
-                    project.file("src/iosMain/kotlin/io/kmpbits/splash/SplashConfig.kt")
+                    project.layout.buildDirectory
+                        .file("generated/kmpSplash/iosMain/kotlin/io/kmpbits/splash/SplashConfig.kt")
                 )
                 pbxprojFile.set(
                     project.rootProject.layout.file(
@@ -56,6 +58,15 @@ class KmpSplashPlugin : Plugin<Project> {
                 resourcePackage.set(composeResourcePackage(project))
             }
         )
+
+        val generatedSrcDir = project.layout.buildDirectory
+            .dir("generated/kmpSplash/iosMain/kotlin")
+
+        project.extensions.configure(KotlinMultiplatformExtension::class.java) {
+            sourceSets.matching { it.name == "iosMain" }.configureEach {
+                kotlin.srcDir(generatedSrcDir)
+            }
+        }
 
         project.tasks.configureEach {
             if (name == "embedAndSignAppleFrameworkForXcode" || name.startsWith("compileKotlinIos")) {
