@@ -8,6 +8,11 @@ Creating a seamless startup experience in Compose Multiplatform is notoriously d
 
 ---
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.kmpbits/splash-runtime.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.kmpbits/splash-runtime)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+---
+
 ## Why KMP Splash?
 
 - **Single Source of Truth:** Configure your background color and logo once in `build.gradle.kts`.
@@ -29,13 +34,28 @@ Creating a seamless startup experience in Compose Multiplatform is notoriously d
 
 ## Installation
 
-### 1. Apply the plugin
+### 1. Configure the Version Catalog
+
+In your `gradle/libs.versions.toml`:
+
+```toml
+[versions]
+kmpSplash = "1.0.0"
+
+[libraries]
+kmpSplash-runtime = { module = "io.github.kmpbits:splash-runtime", version.ref = "kmpSplash" }
+
+[plugins]
+kmpSplash = { id = "io.github.kmpbits.splash", version.ref = "kmpSplash" }
+```
+
+### 2. Apply the plugin
 
 In your Compose App module `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("io.kmpbits.splash") version "0.1.0-alpha01"
+    alias(libs.plugins.kmpSplash)
 }
 
 splashScreen {
@@ -49,13 +69,17 @@ splashScreen {
 
 > **`iosProjectPath`** should point to the inner folder that contains `Info.plist` and `Assets.xcassets` — typically `iosApp/iosApp`, not the root `iosApp` folder.
 
-### 2. Add the Android dependency
+### 3. Add the dependencies
 
 In your Compose App module `build.gradle.kts`:
 
 ```kotlin
+commonMain.dependencies {
+    implementation(libs.kmpSplash.runtime)
+}
+
 androidMain.dependencies {
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.core:core-splashscreen:1.2.0")
 }
 ```
 
