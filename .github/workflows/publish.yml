@@ -3,10 +3,16 @@ name: Publish to Maven Central
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 1.0.0)'
+        required: true
+        default: '0.1.0'
 
 jobs:
   publish:
-    runs-on: macos-latest # Required for iOS artifacts
+    runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,8 +31,12 @@ jobs:
 
       - name: Publish all publications
         run: |
-          TAG=${{ github.event.release.tag_name }}
-          VERSION=${TAG#v}
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION=${{ github.event.inputs.version }}
+          else
+            TAG=${{ github.event.release.tag_name }}
+            VERSION=${TAG#v}
+          fi
           echo "Publishing version: $VERSION"
           ./gradlew publishAllPublicationsToMavenCentralRepository -PkmpSplashVersion=$VERSION --no-configuration-cache
         env:
