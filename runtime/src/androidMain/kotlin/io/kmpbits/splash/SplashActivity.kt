@@ -9,13 +9,26 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
+/**
+ * A base [ComponentActivity] that handles the Android 12+ splash screen API.
+ *
+ * It uses the `androidx.core:core-splashscreen` library to manage the splash screen
+ * visibility based on the [isReady] state.
+ */
 abstract class SplashActivity : ComponentActivity() {
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var ready = false
 
+    /**
+     * Override this to provide the condition for when the splash screen should be dismissed.
+     */
     abstract suspend fun isReady(): Boolean
 
+    /**
+     * Callback invoked when [isReady] returns true.
+     * Usually you want to start your main activity here and finish this one.
+     */
     abstract fun onFinished()
 
     override fun onCreate(savedInstanceState: Bundle?) {

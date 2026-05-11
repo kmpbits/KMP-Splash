@@ -12,6 +12,16 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
+/**
+ * Task that generates iOS-specific splash screen resources.
+ *
+ * This task:
+ * 1. Generates a named color asset in `Assets.xcassets`.
+ * 2. Generates an image set in `Assets.xcassets` for the logo.
+ * 3. Patches `Info.plist` to use `UILaunchScreen` with the generated assets.
+ * 4. Patches `project.pbxproj` to ensure `Assets.xcassets` is included in the build.
+ * 5. Generates `SplashInit.kt` for Compose-side configuration.
+ */
 abstract class GenerateLaunchScreenTask : DefaultTask() {
 
     @get:Input

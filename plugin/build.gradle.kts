@@ -2,6 +2,7 @@ plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
     id("com.vanniktech.maven.publish") version "0.30.0"
+    id("org.jetbrains.dokka") version "2.2.0"
 }
 
 repositories {

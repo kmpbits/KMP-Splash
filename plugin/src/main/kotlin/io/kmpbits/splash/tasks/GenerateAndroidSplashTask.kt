@@ -12,6 +12,15 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
+/**
+ * Task that generates Android-specific splash screen resources.
+ *
+ * This task:
+ * 1. Generates `theme.xml` in `res/values` and `res/values-night`.
+ * 2. Copies the logo drawable to `res/drawable` and `res/drawable-night`.
+ * 3. Generates a temporary `AndroidManifest.xml` to apply the theme.
+ * 4. Generates `SplashInit.kt` for Compose-side configuration.
+ */
 abstract class GenerateAndroidSplashTask : DefaultTask() {
 
     @get:Input

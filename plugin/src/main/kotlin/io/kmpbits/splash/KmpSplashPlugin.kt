@@ -7,6 +7,12 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
+/**
+ * Gradle plugin for configuring splash screens in Kotlin Multiplatform projects.
+ *
+ * This plugin automates the creation and configuration of native splash screens
+ * for both Android and iOS, using a unified DSL.
+ */
 class KmpSplashPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {

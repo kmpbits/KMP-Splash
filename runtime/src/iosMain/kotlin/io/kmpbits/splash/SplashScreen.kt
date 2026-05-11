@@ -10,6 +10,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
+/**
+ * A Composable that displays a splash screen on iOS.
+ *
+ * This is used to provide a seamless transition from the native launch screen
+ * to the Compose content.
+ *
+ * @param isReady A suspend function that returns true when the app is ready to hide the splash screen.
+ * @param onFinished Callback invoked when [isReady] returns true.
+ */
 @Composable
 fun SplashScreen(
     isReady: suspend () -> Boolean,

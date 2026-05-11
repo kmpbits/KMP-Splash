@@ -4,6 +4,17 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 
+/**
+ * Extension for configuring the KMP Splash screen.
+ *
+ * Example usage:
+ * ```kotlin
+ * splashScreen {
+ *     backgroundColor.set("#FFFFFF")
+ *     logoFile.set("logo.png")
+ * }
+ * ```
+ */
 abstract class KmpSplashExtension {
 
     /** Background color in #RRGGBB format. **Mandatory**. */
