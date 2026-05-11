@@ -38,13 +38,13 @@ jobs:
             VERSION=${TAG#v}
           fi
           echo "Publishing version: $VERSION"
+          
+          # Decode the base64 key into a temporary environment variable
+          # that Gradle can read as a property
+          export ORG_GRADLE_PROJECT_signingInMemoryKey=$(echo "${{ secrets.GPG_KEY_CONTENTS }}" | base64 -d)
+          
           ./gradlew publishAllPublicationsToMavenCentralRepository -PkmpSplashVersion=$VERSION --no-configuration-cache
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          # Some configurations might expect these instead
-          ORG_GRADLE_PROJECT_signing.keyId: ${{ secrets.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signing.password: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signing.secretKeyRingFile: ""
