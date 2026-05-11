@@ -44,7 +44,13 @@ jobs:
           export ORG_GRADLE_PROJECT_signingInMemoryKey=$(echo "${{ secrets.GPG_KEY_CONTENTS }}" | base64 -d)
           
           ./gradlew publishAllPublicationsToMavenCentralRepository -PkmpSplashVersion=$VERSION --no-configuration-cache
+          
+          # Also publish the plugin (which is an included build)
+          # We pass the same environment variables and the decoded key
+          cd plugin
+          ../gradlew publishAllPublicationsToMavenCentralRepository -PkmpSplashVersion=$VERSION --no-configuration-cache
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          # The key is exported above, so it will be available to the second gradlew call as well
