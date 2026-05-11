@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
-    id("io.kmpbits.splash")
+    id("io.github.kmpbits.splash")
 }
 
 splashScreen {

@@ -26,7 +26,7 @@ kotlin {
 gradlePlugin {
     plugins {
         create("kmpSplash") {
-            id = "io.kmpbits.splash"
+            id = "io.github.kmpbits.splash"
             implementationClass = "io.kmpbits.splash.KmpSplashPlugin"
             displayName = "KMP Splash Screen Plugin"
             description = "Configure splash screens for Android and iOS from a single DSL block"
