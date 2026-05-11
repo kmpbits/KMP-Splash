@@ -34,7 +34,28 @@ Creating a seamless startup experience in Compose Multiplatform is notoriously d
 
 ## Installation
 
-### 1. Configure the Version Catalog
+### 1. Configure Repositories
+
+Ensure you have `mavenCentral()` in your `settings.gradle.kts`:
+
+```kotlin
+pluginManagement {
+    repositories {
+        google()
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+```
+
+### 2. Configure the Version Catalog
 
 In your `gradle/libs.versions.toml`:
 
@@ -49,7 +70,7 @@ kmpSplash-runtime = { module = "io.github.kmpbits:splash-runtime", version.ref =
 kmpSplash = { id = "io.github.kmpbits.splash", version.ref = "kmpSplash" }
 ```
 
-### 2. Apply the plugin
+### 3. Apply the plugin
 
 In your Compose App module `build.gradle.kts`:
 
@@ -69,7 +90,7 @@ splashScreen {
 
 > **`iosProjectPath`** should point to the inner folder that contains `Info.plist` and `Assets.xcassets` — typically `iosApp/iosApp`, not the root `iosApp` folder.
 
-### 3. Add the dependencies
+### 4. Add the dependencies
 
 In your Compose App module `build.gradle.kts`:
 
@@ -83,7 +104,7 @@ androidMain.dependencies {
 }
 ```
 
-### 3. Run the generation task (Optional)
+### 5. Run the generation task (Optional)
 
 KMP Splash is integrated into the Gradle build process. On both **Android** and **iOS**, the splash assets are generated automatically when you build or run your app.
 
