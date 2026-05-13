@@ -1,16 +1,11 @@
+import io.kmpbits.splash.SplashColor
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     id("io.github.kmpbits.splash")
-}
-
-splashScreen {
-    backgroundColor = "#FFFFFF"
-    backgroundColorNight = "#1A1A2E"
-    iosProjectPath = "sample/iosApp/iosApp"
-    logoFile = "logo.png"
 }
 
 kotlin {
@@ -45,6 +40,13 @@ kotlin {
             implementation(libs.androidx.appcompat)
         }
     }
+}
+
+splashScreen {
+    backgroundColor = SplashColor.white
+    backgroundColorNight = SplashColor.hex("#1A1A2E")
+    iosProjectPath = "sample/iosApp/iosApp"
+    logoFile = "logo.png"
 }
 
 android {

@@ -35,8 +35,8 @@ class KmpSplashPlugin : Plugin<Project> {
                     // if the task isn't actually run.
                 }
 
-                backgroundColor.set(ext.backgroundColor)
-                backgroundColorNight.set(ext.backgroundColorNight)
+                backgroundColor.set(ext.backgroundColor.map { it.hex })
+                backgroundColorNight.set(ext.backgroundColorNight.map { it.hex })
 
                 xcassetsDir.set(
                     project.rootProject.layout.dir(
@@ -122,8 +122,8 @@ class KmpSplashPlugin : Plugin<Project> {
                 group = "kmp-splash"
                 description = "Generates Android splash screen theme.xml"
 
-                backgroundColor.set(ext.backgroundColor)
-                backgroundColorNight.set(ext.backgroundColorNight)
+                backgroundColor.set(ext.backgroundColor.map { it.hex })
+                backgroundColorNight.set(ext.backgroundColorNight.map { it.hex })
                 resOutputDir.set(generatedResDir)
                 splashConfigFile.set(generatedKotlinDir.map { it.file("io/kmpbits/splash/SplashInit.kt") })
                 manifestFile.set(generatedManifestDir.map { it.file("AndroidManifest.xml") })

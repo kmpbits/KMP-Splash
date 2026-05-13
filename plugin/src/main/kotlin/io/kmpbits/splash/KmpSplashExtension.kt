@@ -10,16 +10,25 @@ import org.gradle.api.tasks.Optional
  * Example usage:
  * ```kotlin
  * splashScreen {
- *     backgroundColor.set("#FFFFFF")
- *     logoFile.set("logo.png")
+ *     backgroundColor = SplashColor.hex("#FFFFFF")
+ *     backgroundColorNight = SplashColor.rgb(26, 26, 46)
+ *     logoFile = "logo.png"
  * }
  * ```
  */
 abstract class KmpSplashExtension {
 
-    /** Background color in #RRGGBB format. **Mandatory**. */
+    /** Background color for light mode. Mandatory. */
     @get:Input
-    abstract val backgroundColor: Property<String>
+    abstract val backgroundColor: Property<SplashColor>
+
+    /**
+     * Optional dark-mode background color. When set, a `values-night/themes.xml` is
+     * generated for Android and iOS will use it when the system is in dark mode.
+     */
+    @get:Input
+    @get:Optional
+    abstract val backgroundColorNight: Property<SplashColor>
 
     /**
      * Name of the logo file (with extension) located in `src/commonMain/composeResources/drawable/`.
@@ -43,12 +52,4 @@ abstract class KmpSplashExtension {
      */
     @get:Input
     abstract val iosProjectPath: Property<String>
-
-    /**
-     * Optional dark-mode background color. When set, a `values-night/themes.xml` is
-     * generated for Android. iOS ignores this (storyboard has no dark-mode support).
-     */
-    @get:Input
-    @get:Optional
-    abstract val backgroundColorNight: Property<String>
 }
