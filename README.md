@@ -204,6 +204,21 @@ When a KMP app starts on iOS, the OS displays the native launch screen immediate
 
 ---
 
+## Known Limitations
+
+**App-level dark mode overrides**
+
+If your app has its own appearance setting (e.g. a dark mode toggle independent of the system setting), the native splash screen will not respect it. Both iOS `UILaunchScreen` and Android's `SplashScreen` API are rendered by the OS before any app code runs, they read the system dark mode setting directly. There is no way for any library to work around this.
+
+The Compose layer (`SplashConfig` / `SplashActivity`) does run app code, so it can respond to your app's own preference. For the native layer, the options are:
+
+- Use a single background color that works in both light and dark modes
+- Accept the brief mismatch, the native splash shows the system color, and the Compose layer immediately corrects to your app's preferred color
+
+This is a system limitation, not a bug in the library.
+
+---
+
 ## Contributing
 
 Contributions are welcome! If you find a bug or have a feature request, please open an issue or a pull request.
