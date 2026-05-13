@@ -61,7 +61,7 @@ In your `gradle/libs.versions.toml`:
 
 ```toml
 [versions]
-kmpSplash = "1.0.0"
+kmpSplash = "0.2.1"
 
 [libraries]
 kmpSplash-runtime = { module = "io.github.kmpbits:splash-runtime", version.ref = "kmpSplash" }
@@ -80,12 +80,28 @@ plugins {
 }
 
 splashScreen {
-    backgroundColor = "#FFFFFF"           // Light mode background
-    backgroundColorNight = "#1A1A2E"      // Optional: dark mode background
-    logoFile = "logo.png"                 // File name in src/commonMain/composeResources/drawable/
-    logoFileNight = "logo_dark.png"       // Optional: dark mode logo
-    iosProjectPath = "iosApp/iosApp"      // Optional: defaults to "iosApp/iosApp"
+    backgroundColor = SplashColor.hex("#FFFFFF")       // Light mode background
+    backgroundColorNight = SplashColor.hex("#1A1A2E")  // Optional: dark mode background
+    logo = SplashLogo.resource("logo.png")             // File in composeResources/drawable/
+    logoDark = SplashLogo.resource("logo_dark.png")    // Optional: dark mode logo
+    iosProjectPath = "iosApp/iosApp"                   // Optional: defaults to "iosApp/iosApp"
 }
+```
+
+#### SplashColor alternatives
+
+```kotlin
+SplashColor.hex("#FFFFFF")        // Hex string — accepts both #RRGGBB and RRGGBB
+SplashColor.rgb(255, 255, 255)    // RGB values (0–255 each)
+SplashColor.white                 // Named constant
+SplashColor.black                 // Named constant
+```
+
+#### SplashLogo alternatives
+
+```kotlin
+SplashLogo.resource("logo.png")                              // File in composeResources/drawable/
+SplashLogo.path("src/commonMain/composeResources/drawable/logo.png")  // Custom path relative to module
 ```
 
 > **`iosProjectPath`** should point to the inner folder that contains `Info.plist` and `Assets.xcassets` — typically `iosApp/iosApp`, not the root `iosApp` folder.

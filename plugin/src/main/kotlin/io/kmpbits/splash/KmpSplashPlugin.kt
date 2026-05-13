@@ -61,27 +61,23 @@ class KmpSplashPlugin : Plugin<Project> {
                         }
                     )
                 )
-                logoFilePath.set(ext.logoFile)
+                logoFilePath.set(ext.logo.map { it.fileName })
                 logoSourceFile.set(
-                    project.layout.file(ext.logoFile.map { fileName ->
-                        project.file("src/commonMain/composeResources/drawable/$fileName")
+                    project.layout.file(ext.logo.map { logo ->
+                        project.file(logo.resolvedPath())
                     })
                 )
                 logoResourceName.set(
-                    ext.logoFile.map { fileName ->
-                        fileName.substringBeforeLast('.')
-                    }
+                    ext.logo.map { it.fileName.substringAfterLast('/').substringBeforeLast('.') }
                 )
-                logoNightFilePath.set(ext.logoFileNight)
+                logoNightFilePath.set(ext.logoDark.map { it.fileName })
                 logoNightSourceFile.set(
-                    project.layout.file(ext.logoFileNight.map { fileName ->
-                        project.file("src/commonMain/composeResources/drawable/$fileName")
+                    project.layout.file(ext.logoDark.map { logo ->
+                        project.file(logo.resolvedPath())
                     })
                 )
                 logoNightResourceName.set(
-                    ext.logoFileNight.map { fileName ->
-                        fileName.substringBeforeLast('.')
-                    }
+                    ext.logoDark.map { it.fileName.substringAfterLast('/').substringBeforeLast('.') }
                 )
                 resourcePackage.set(composeResourcePackage(project))
             }
@@ -130,18 +126,16 @@ class KmpSplashPlugin : Plugin<Project> {
                 resourcePackage.set(composeResourcePackage(project))
 
                 logoSourceFile.set(
-                    project.layout.file(ext.logoFile.map { fileName ->
-                        project.file("src/commonMain/composeResources/drawable/$fileName")
+                    project.layout.file(ext.logo.map { logo ->
+                        project.file(logo.resolvedPath())
                     })
                 )
                 logoDrawableName.set(
-                    ext.logoFile.map { fileName ->
-                        fileName.substringBeforeLast('.')
-                    }
+                    ext.logo.map { it.fileName.substringAfterLast('/').substringBeforeLast('.') }
                 )
                 logoNightSourceFile.set(
-                    project.layout.file(ext.logoFileNight.map { fileName ->
-                        project.file("src/commonMain/composeResources/drawable/$fileName")
+                    project.layout.file(ext.logoDark.map { logo ->
+                        project.file(logo.resolvedPath())
                     })
                 )
             }

@@ -12,7 +12,7 @@ import org.gradle.api.tasks.Optional
  * splashScreen {
  *     backgroundColor = SplashColor.hex("#FFFFFF")
  *     backgroundColorNight = SplashColor.rgb(26, 26, 46)
- *     logoFile = "logo.png"
+ *     logo = SplashLogo.resource("logo.png")
  * }
  * ```
  */
@@ -31,20 +31,19 @@ abstract class KmpSplashExtension {
     abstract val backgroundColorNight: Property<SplashColor>
 
     /**
-     * Name of the logo file (with extension) located in `src/commonMain/composeResources/drawable/`.
-     * e.g. "logo.png".
+     * Logo for light mode. Use [SplashLogo.resource] for files in composeResources/drawable,
+     * or [SplashLogo.path] for a custom path relative to the module.
      */
     @get:Input
     @get:Optional
-    abstract val logoFile: Property<String>
+    abstract val logo: Property<SplashLogo>
 
     /**
      * Optional logo for dark mode. If set, this file will be used when the system is in dark mode.
-     * Must be located in `src/commonMain/composeResources/drawable/`.
      */
     @get:Input
     @get:Optional
-    abstract val logoFileNight: Property<String>
+    abstract val logoDark: Property<SplashLogo>
 
     /**
      * Path to the Xcode project folder that contains `Info.plist`.

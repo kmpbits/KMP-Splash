@@ -1,4 +1,5 @@
 import io.kmpbits.splash.SplashColor
+import io.kmpbits.splash.SplashLogo
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -46,7 +47,7 @@ splashScreen {
     backgroundColor = SplashColor.white
     backgroundColorNight = SplashColor.hex("#1A1A2E")
     iosProjectPath = "sample/iosApp/iosApp"
-    logoFile = "logo.png"
+    logo = SplashLogo.resource("logo.png")
 }
 
 android {
