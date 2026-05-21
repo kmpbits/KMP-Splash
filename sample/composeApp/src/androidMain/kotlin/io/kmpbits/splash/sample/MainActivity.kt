@@ -1,6 +1,7 @@
 package io.kmpbits.splash.sample
 
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import io.kmpbits.splash.SplashActivity
 import kotlinx.coroutines.flow.first
@@ -8,6 +9,10 @@ import kotlinx.coroutines.flow.first
 class MainActivity : SplashActivity() {
 
     private val viewModel: SplashViewModel by viewModels()
+
+    override fun onPreCreate() {
+        enableEdgeToEdge()
+    }
 
     override suspend fun isReady(): Boolean {
         viewModel.isLoading.first { !it }

@@ -31,8 +31,15 @@ abstract class SplashActivity : ComponentActivity() {
      */
     abstract fun onFinished()
 
+    /**
+     * Called after [installSplashScreen] but before [super.onCreate][ComponentActivity.onCreate].
+     * Override to perform setup that must happen in this exact window — e.g. [enableEdgeToEdge].
+     */
+    protected open fun onPreCreate() {}
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
+        onPreCreate()
         super.onCreate(savedInstanceState)
 
         splashScreen.setKeepOnScreenCondition { !ready }

@@ -7,14 +7,8 @@ import androidx.compose.runtime.Composable
  *
  * Example usage in `MainViewController`:
  * ```kotlin
- * fun MainViewController() = ComposeContainer {
- *     var showSplash by remember { mutableStateOf(true) }
- *     if (showSplash) {
- *         SplashConfig(
- *             isReady = { viewModel.isReady() },
- *             onFinished = { showSplash = false }
- *         )
- *     } else {
+ * fun MainViewController() = ComposeUIViewController {
+ *     SplashConfig(isReady = { delay(1500); true }) {
  *         App()
  *     }
  * }
@@ -24,8 +18,8 @@ object SplashConfig {
     @Composable
     operator fun invoke(
         isReady: suspend () -> Boolean,
-        onFinished: () -> Unit = {},
+        content: @Composable () -> Unit,
     ) {
-        SplashScreen(isReady = isReady, onFinished = onFinished)
+        SplashScreen(isReady = isReady, content = content)
     }
 }

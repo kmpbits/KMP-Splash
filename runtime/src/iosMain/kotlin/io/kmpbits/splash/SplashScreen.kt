@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
@@ -17,38 +21,44 @@ import androidx.compose.ui.Modifier
  * to the Compose content.
  *
  * @param isReady A suspend function that returns true when the app is ready to hide the splash screen.
- * @param onFinished Callback invoked when [isReady] returns true.
+ * @param content The composable to display once [isReady] returns true.
  */
 @Composable
 fun SplashScreen(
     isReady: suspend () -> Boolean,
-    onFinished: () -> Unit,
+    content: @Composable () -> Unit,
 ) {
-    val nightColor = SplashDefaults.backgroundColorNight
-    val background = if (nightColor != null && isSystemInDarkTheme()) nightColor else SplashDefaults.backgroundColor
-    
-    val logoNight = SplashDefaults.logoPainterNight
-    val logo = if (logoNight != null && isSystemInDarkTheme()) {
-        logoNight.invoke()
+    var isFinished by remember { mutableStateOf(false) }
+
+    if (isFinished) {
+        content()
     } else {
-        SplashDefaults.logoPainter?.invoke()
-    }
+        val nightColor = SplashDefaults.backgroundColorNight
+        val background = if (nightColor != null && isSystemInDarkTheme()) nightColor else SplashDefaults.backgroundColor
 
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .background(background),
-    ) {
-        if (logo != null) {
-            Image(
-                painter = logo,
-                contentDescription = null,
-            )
+        val logoNight = SplashDefaults.logoPainterNight
+        val logo = if (logoNight != null && isSystemInDarkTheme()) {
+            logoNight.invoke()
+        } else {
+            SplashDefaults.logoPainter?.invoke()
         }
-    }
 
-    LaunchedEffect(Unit) {
-        if (isReady()) onFinished()
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(background),
+        ) {
+            if (logo != null) {
+                Image(
+                    painter = logo,
+                    contentDescription = null,
+                )
+            }
+        }
+
+        LaunchedEffect(Unit) {
+            if (isReady()) isFinished = true
+        }
     }
 }

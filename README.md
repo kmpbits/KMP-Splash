@@ -161,29 +161,44 @@ class MainActivity : SplashActivity() {
 }
 ```
 
+#### Edge-to-Edge
+
+If you need to call `enableEdgeToEdge()`, override `onPreCreate()` instead of `onCreate()`. This hook runs at exactly the right moment — after `installSplashScreen()` but before `super.onCreate()` — which is the order Android requires:
+
+```kotlin
+class MainActivity : SplashActivity() {
+
+    override fun onPreCreate() {
+        enableEdgeToEdge()
+    }
+
+    override suspend fun isReady(): Boolean { ... }
+
+    override fun onFinished() { ... }
+}
+```
+
+> [!IMPORTANT]
+> Do **not** call `enableEdgeToEdge()` inside your own `onCreate()` override. Doing so runs it before `installSplashScreen()`, which causes a stray toolbar to appear on the first frame.
+
 ### iOS
 
-Call `SplashConfig` in your `MainViewController`:
+Call `SplashConfig` in your `MainViewController`, passing your app content as the trailing lambda:
 
 ```kotlin
 fun MainViewController() = ComposeUIViewController {
-    var isAppReady by remember { mutableStateOf(false) }
-
-    if (!isAppReady) {
-        SplashConfig(
-            isReady = {
-                delay(1500) // Your initialization logic
-                true
-            },
-            onFinished = { isAppReady = true }
-        )
-    } else {
+    SplashConfig(
+        isReady = {
+            delay(1500) // Your initialization logic
+            true
+        }
+    ) {
         App()
     }
 }
 ```
 
-Colors and logo are picked up automatically from your Gradle configuration — no extra parameters needed.
+`SplashConfig` manages the splash/content transition internally — no state boilerplate needed. Colors and logo are picked up automatically from your Gradle configuration.
 
 ---
 
