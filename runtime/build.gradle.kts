@@ -30,9 +30,18 @@ kotlin {
             implementation(compose.foundation)
             implementation(libs.coroutines.core)
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
         androidMain.dependencies {
             implementation(libs.androidx.activity.core)
             implementation(libs.androidx.splashscreen)
+        }
+        androidUnitTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.androidx.test.ext.junit)
+            implementation(libs.robolectric)
+            implementation(libs.coroutines.test)
         }
     }
 }
@@ -41,6 +50,9 @@ android {
     namespace = "io.kmpbits.splash.runtime"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 mavenPublishing {
