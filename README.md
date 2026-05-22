@@ -9,7 +9,7 @@ Creating a seamless startup experience in Compose Multiplatform is notoriously d
 ---
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.kmpbits/splash-runtime.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.kmpbits/splash-runtime)
-[![Tests](https://github.com/kmpbits/netflow/actions/workflows/test.yml/badge.svg)](https://github.com/kmpbits/netflow/actions/workflows/test.yml)
+[![Tests](https://github.com/kmpbits/KMP-Splash/actions/workflows/test.yml/badge.svg)](https://github.com/kmpbits/netflow/actions/workflows/test.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ---
