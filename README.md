@@ -64,7 +64,7 @@ In your `gradle/libs.versions.toml`:
 
 ```toml
 [versions]
-kmpSplash = "0.2.1"
+kmpSplash = "<version>"
 
 [libraries]
 kmpSplash-runtime = { module = "io.github.kmpbits:splash-runtime", version.ref = "kmpSplash" }
