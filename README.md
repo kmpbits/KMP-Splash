@@ -120,8 +120,6 @@ ExitAnimation.SlideDown(400)      // Slide downward to reveal the app
 
 The duration parameter is optional — the values above are the defaults.
 
-> **Platform support:** exit animations are currently applied on **iOS only**, via Compose `graphicsLayer`. Android exit animation support is planned for a future release.
-
 > **`iosProjectPath`** should point to the inner folder that contains `Info.plist` and `Assets.xcassets` — typically `iosApp/iosApp`, not the root `iosApp` folder.
 
 ### 4. Add the dependencies
@@ -222,10 +220,15 @@ fun MainViewController() = ComposeUIViewController {
 
 ## How it Works
 
+The Gradle plugin does the heavy lifting at build time so you never touch XML or native config files manually:
+
+- **Android:** generates `themes.xml` (and `values-night`), copies your logo drawable, patches the `AndroidManifest.xml` to apply the splash theme, and registers a `ContentProvider` that initialises runtime config before your `Activity` starts.
+- **iOS:** generates the `SplashBackground` color asset and logo imageset in `Assets.xcassets`, and patches `Info.plist` and `project.pbxproj` to wire up `UILaunchScreen` — no Storyboard or Xcode required.
+
 | Platform | Native (Booting) | Compose (Loading) |
 | :--- | :--- | :--- |
-| **Android** | Generates `themes.xml` and `values-night`. Uses `installSplashScreen()`. | Controlled by `SplashActivity`. |
-| **iOS** | Patches `Info.plist` with `UILaunchScreen`, generates `SplashBackground` color asset and logo imageset in `Assets.xcassets`. | `SplashConfig` uses `isSystemInDarkTheme()` to match the native screen exactly. |
+| **Android** | `themes.xml` + auto-patched `AndroidManifest.xml`. Uses `installSplashScreen()`. | `SplashActivity` controls visibility and runs the exit animation via `setOnExitAnimationListener`. |
+| **iOS** | Patches `Info.plist` with `UILaunchScreen`, generates `SplashBackground` color asset and logo imageset in `Assets.xcassets`. | `SplashConfig` uses `isSystemInDarkTheme()` to match the native screen exactly, then animates the exit with `AnimatedVisibility`. |
 
 ---
 

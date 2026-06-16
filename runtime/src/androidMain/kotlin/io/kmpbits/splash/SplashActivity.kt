@@ -13,8 +13,8 @@ import kotlinx.coroutines.launch
  * A base [ComponentActivity] that handles the Android splash screen API via
  * `androidx.core:core-splashscreen`.
  *
- * Splash visibility is driven by [isReady], and the exit animation is driven by
- * [SplashDefaults.exitAnimation] (set automatically by the Gradle plugin).
+ * Splash visibility and exit animation are both driven by [isReady] and
+ * [SplashDefaults.exitAnimation] respectively, set automatically by the Gradle plugin.
  */
 abstract class SplashActivity : ComponentActivity() {
 

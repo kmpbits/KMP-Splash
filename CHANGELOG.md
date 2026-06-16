@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0
+
+### New
+- Exit animations — `FadeOut`, `SlideUp`, `SlideDown` — on both **Android and iOS**
+- `exitAnimation` property in the Gradle DSL; duration is optional with sensible defaults
+- `onPreCreate()` hook in `SplashActivity` for setup that must run after `installSplashScreen()` but before `super.onCreate()` (e.g. `enableEdgeToEdge()`)
+- Android manifest is now fully auto-patched: splash theme and a `ContentProvider` that initialises runtime config before any `Activity` starts — no manual manifest changes needed
+
+### Changed
+- Android exit animations use `setOnExitAnimationListener` from `core-splashscreen`, running over the system splash view
+- iOS exit animations use `AnimatedVisibility` with proper easing (`LinearEasing` for fade, `FastOutLinearInEasing` for slides), replacing the previous `graphicsLayer` approach
+
+---
+
 ## 0.2.1
 
 ### New
