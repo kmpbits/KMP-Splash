@@ -46,6 +46,23 @@ abstract class KmpSplashExtension {
     abstract val logoDark: Property<SplashLogo>
 
     /**
+     * Exit animation for the splash screen.
+     *
+     * Currently applied on **iOS only**. Android exit animation support is planned
+     * for a future release.
+     *
+     * Defaults to [ExitAnimation.None].
+     *
+     * Example:
+     * ```kotlin
+     * exitAnimation = ExitAnimation.FadeOut(300)
+     * ```
+     */
+    @get:Input
+    @get:Optional
+    abstract val exitAnimation: Property<ExitAnimation>
+
+    /**
      * Path to the Xcode project folder that contains `Info.plist`.
      * Defaults to `"iosApp/iosApp"`.
      */

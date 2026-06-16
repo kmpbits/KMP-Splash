@@ -55,34 +55,51 @@ $logoItem
 
     /**
      * Generates a manifest by patching the [baseContent] or creating a new one.
-     * It ensures the `<application>` tag has the correct splash theme.
+     * It ensures the `<application>` tag has the correct splash theme and registers
+     * [KmpSplashInitProvider] so [SplashDefaults] is initialized before any Activity runs.
      */
     fun generateManifest(baseContent: String?): String {
         val splashTheme = "@style/Theme.App.SplashScreen"
         val themeAttr = "android:theme=\"$splashTheme\""
-        
+        val providerEntry = """        <provider
+            android:name="io.kmpbits.splash.KmpSplashInitProvider"
+            android:authorities="${'$'}{applicationId}.kmp_splash_init"
+            android:exported="false" />"""
+
         if (baseContent == null) {
             return """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application $themeAttr />
+    <application $themeAttr>
+$providerEntry
+    </application>
 </manifest>"""
         }
 
-        // Find the <application ... > tag
+        // Patch theme attribute on <application> tag
         val applicationTagRegex = """<application(\s+[^>]*?)(/?)>""".toRegex(RegexOption.DOT_MATCHES_ALL)
-        
-        return applicationTagRegex.replace(baseContent) { match ->
+        var result = applicationTagRegex.replace(baseContent) { match ->
             val attrs = match.groups[1]?.value ?: ""
             val selfClosing = match.groups[2]?.value ?: ""
             val themeRegex = """android:theme="[^"]*"""".toRegex()
-            
+
             val newAttrs = if (themeRegex.containsMatchIn(attrs)) {
                 themeRegex.replace(attrs, themeAttr)
             } else {
-                // Prepend theme for visibility
                 " $themeAttr$attrs"
             }
             "<application$newAttrs$selfClosing>"
         }
+
+        // Inject provider: expand self-closing <application .../> or insert before </application>
+        val selfClosingRegex = """(<application[^>]*/)>""".toRegex(RegexOption.DOT_MATCHES_ALL)
+        result = if (selfClosingRegex.containsMatchIn(result)) {
+            selfClosingRegex.replace(result) { match ->
+                "${match.groupValues[1]}>\n$providerEntry\n    </application>"
+            }
+        } else {
+            result.replace("</application>", "$providerEntry\n    </application>")
+        }
+
+        return result
     }
 }

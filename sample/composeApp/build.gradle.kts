@@ -1,3 +1,4 @@
+import io.kmpbits.splash.ExitAnimation
 import io.kmpbits.splash.SplashColor
 import io.kmpbits.splash.SplashLogo
 
@@ -48,6 +49,7 @@ splashScreen {
     backgroundColorNight = SplashColor.hex("#1A1A2E")
     iosProjectPath = "sample/iosApp/iosApp"
     logo = SplashLogo.resource("logo.png")
+    exitAnimation = ExitAnimation.SlideUp()
 }
 
 android {

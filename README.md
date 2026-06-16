@@ -18,9 +18,10 @@ Creating a seamless startup experience in Compose Multiplatform is notoriously d
 
 ## Why KMP Splash?
 
-- **Single Source of Truth:** Configure your background color and logo once in `build.gradle.kts`.
+- **Single Source of Truth:** Configure your background color, logo, and exit animation once in `build.gradle.kts`.
 - **Native Integration:** Generates real `Assets.xcassets` for iOS and `themes.xml` for Android.
 - **Seamless Transitions:** Provides a `SplashConfig` composable to prevent the flicker when shifting from native boot to Compose UI.
+- **Exit Animations:** Fade, slide up, or slide down — consistent across Android and iOS, zero extra code.
 - **No Xcode Required:** Patches `.pbxproj` and `Info.plist` automatically. No more Storyboards.
 - **Dark Mode Ready:** Built-in support for dark mode background colors on both Android and iOS.
 
@@ -87,6 +88,7 @@ splashScreen {
     backgroundColorNight = SplashColor.hex("#1A1A2E")  // Optional: dark mode background
     logo = SplashLogo.resource("logo.png")             // File in composeResources/drawable/
     logoDark = SplashLogo.resource("logo_dark.png")    // Optional: dark mode logo
+    exitAnimation = ExitAnimation.FadeOut(300)         // Optional: exit animation (Android + iOS)
     iosProjectPath = "iosApp/iosApp"                   // Optional: defaults to "iosApp/iosApp"
 }
 ```
@@ -106,6 +108,19 @@ SplashColor.black                 // Named constant
 SplashLogo.resource("logo.png")                              // File in composeResources/drawable/
 SplashLogo.path("src/commonMain/composeResources/drawable/logo.png")  // Custom path relative to module
 ```
+
+#### ExitAnimation options
+
+```kotlin
+ExitAnimation.None                // No animation — splash disappears instantly (default)
+ExitAnimation.FadeOut(300)        // Fade out over 300ms
+ExitAnimation.SlideUp(400)        // Slide upward to reveal the app
+ExitAnimation.SlideDown(400)      // Slide downward to reveal the app
+```
+
+The duration parameter is optional — the values above are the defaults.
+
+> **Platform support:** exit animations are currently applied on **iOS only**, via Compose `graphicsLayer`. Android exit animation support is planned for a future release.
 
 > **`iosProjectPath`** should point to the inner folder that contains `Info.plist` and `Assets.xcassets` — typically `iosApp/iosApp`, not the root `iosApp` folder.
 

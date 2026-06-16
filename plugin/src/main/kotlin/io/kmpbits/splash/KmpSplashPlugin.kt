@@ -80,6 +80,7 @@ class KmpSplashPlugin : Plugin<Project> {
                     ext.logoDark.map { it.fileName.substringAfterLast('/').substringBeforeLast('.') }
                 )
                 resourcePackage.set(composeResourcePackage(project))
+                exitAnimation.set(ext.exitAnimation)
             }
         )
 
@@ -138,6 +139,7 @@ class KmpSplashPlugin : Plugin<Project> {
                         project.file(logo.resolvedPath())
                     })
                 )
+                exitAnimation.set(ext.exitAnimation)
             }
         )
 

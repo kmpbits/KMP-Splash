@@ -22,4 +22,7 @@ object SplashDefaults {
 
     /** Composable provider for the logo painter in dark mode. */
     var logoPainterNight: (@Composable () -> Painter?)? = null
+
+    /** Exit animation applied when the splash screen is dismissed. */
+    var exitAnimation: ExitAnimation = ExitAnimation.None
 }

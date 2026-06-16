@@ -10,10 +10,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * A base [ComponentActivity] that handles the Android 12+ splash screen API.
+ * A base [ComponentActivity] that handles the Android splash screen API via
+ * `androidx.core:core-splashscreen`.
  *
- * It uses the `androidx.core:core-splashscreen` library to manage the splash screen
- * visibility based on the [isReady] state.
+ * Splash visibility is driven by [isReady], and the exit animation is driven by
+ * [SplashDefaults.exitAnimation] (set automatically by the Gradle plugin).
  */
 abstract class SplashActivity : ComponentActivity() {
 
@@ -27,7 +28,7 @@ abstract class SplashActivity : ComponentActivity() {
 
     /**
      * Callback invoked when [isReady] returns true.
-     * Usually you want to start your main activity here and finish this one.
+     * Usually you want to call [setContent] here to display your app content.
      */
     abstract fun onFinished()
 
@@ -43,6 +44,31 @@ abstract class SplashActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         splashScreen.setKeepOnScreenCondition { !ready }
+
+        val anim = SplashDefaults.exitAnimation
+        if (anim != ExitAnimation.None) {
+            splashScreen.setOnExitAnimationListener { provider ->
+                val view = provider.view
+                when (anim) {
+                    is ExitAnimation.FadeOut -> view.animate()
+                        .alpha(0f)
+                        .setDuration(anim.durationMs.toLong())
+                        .withEndAction { provider.remove() }
+                        .start()
+                    is ExitAnimation.SlideUp -> view.animate()
+                        .translationY(-view.height.toFloat())
+                        .setDuration(anim.durationMs.toLong())
+                        .withEndAction { provider.remove() }
+                        .start()
+                    is ExitAnimation.SlideDown -> view.animate()
+                        .translationY(view.height.toFloat())
+                        .setDuration(anim.durationMs.toLong())
+                        .withEndAction { provider.remove() }
+                        .start()
+                    is ExitAnimation.None -> provider.remove()
+                }
+            }
+        }
 
         scope.launch {
             ready = isReady()
