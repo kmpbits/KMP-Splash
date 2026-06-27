@@ -90,8 +90,23 @@ splashScreen {
     logoDark = SplashLogo.resource("logo_dark.png")    // Optional: dark mode logo
     exitAnimation = ExitAnimation.FadeOut(300)         // Optional: exit animation (Android + iOS)
     iosProjectPath = "iosApp/iosApp"                   // Optional: defaults to "iosApp/iosApp"
+    androidAppPath = "androidApp"                      // Required if using the new KMP module structure
 }
 ```
+
+#### New KMP module structure (`androidApp` + `shared`)
+
+Newer KMP project templates separate the Android entry point into a dedicated `androidApp` module, independent from `composeApp`. In this case, **`androidAppPath` is required** — without it the plugin targets the current module's `androidMain` sourcesets and the Android app module will not be configured.
+
+```kotlin
+// composeApp/build.gradle.kts
+splashScreen {
+    backgroundColor = SplashColor.white
+    androidAppPath = "androidApp"   // Path to the androidApp module, relative to the root project
+}
+```
+
+When `androidAppPath` is set, the plugin writes the generated resources and Kotlin sources directly into `androidApp/src/main/` (which AGP picks up automatically) and patches `AndroidManifest.xml` in-place. The `preBuild` task in `androidApp` is automatically wired to run `generateAndroidSplash` first — no manual setup required.
 
 #### SplashColor alternatives
 
@@ -121,6 +136,8 @@ ExitAnimation.SlideDown(400)      // Slide downward to reveal the app
 The duration parameter is optional — the values above are the defaults.
 
 > **`iosProjectPath`** should point to the inner folder that contains `Info.plist` and `Assets.xcassets` — typically `iosApp/iosApp`, not the root `iosApp` folder.
+
+> **`androidAppPath`** is required when your project uses the new KMP module structure where the Android app lives in a dedicated module separate from `composeApp`. Set it to the path of that module relative to the root project (e.g. `"androidApp"`). Leave it unset for the classic structure where Android is part of `composeApp`.
 
 ### 4. Add the dependencies
 

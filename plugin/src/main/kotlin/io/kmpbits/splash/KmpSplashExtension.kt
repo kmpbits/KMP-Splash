@@ -68,4 +68,29 @@ abstract class KmpSplashExtension {
      */
     @get:Input
     abstract val iosProjectPath: Property<String>
+
+    /**
+     * Path to the separate Android app module, relative to the root project.
+     *
+     * Use this when your project uses the new KMP structure where the Android app
+     * lives in a dedicated module (e.g. `"androidApp"`), separate from `composeApp`.
+     *
+     * When set, the plugin writes generated resources and Kotlin sources directly into
+     * `{androidAppPath}/src/main/` and patches `AndroidManifest.xml` in-place.
+     * No sourcesets registration is needed — AGP picks up files from `src/main/` automatically.
+     *
+     * When not set (default), the plugin targets the current module's `androidMain`
+     * sourceSets, which is the classic KMP structure.
+     *
+     * Example:
+     * ```kotlin
+     * splashScreen {
+     *     backgroundColor = SplashColor.white
+     *     androidAppPath = "androidApp"
+     * }
+     * ```
+     */
+    @get:Input
+    @get:Optional
+    abstract val androidAppPath: Property<String>
 }

@@ -121,9 +121,27 @@ class KmpSplashPlugin : Plugin<Project> {
 
                 backgroundColor.set(ext.backgroundColor.map { it.hex })
                 backgroundColorNight.set(ext.backgroundColorNight.map { it.hex })
-                resOutputDir.set(generatedResDir)
-                splashConfigFile.set(generatedKotlinDir.map { it.file("io/kmpbits/splash/SplashInit.kt") })
+
+                // When androidAppPath is set, write directly into androidApp/src/main/;
+                // otherwise use the generated build directory (classic KMP structure).
+                resOutputDir.set(
+                    ext.androidAppPath.map { androidPath ->
+                        project.rootProject.layout.projectDirectory.dir("$androidPath/src/main/res")
+                    }.orElse(generatedResDir)
+                )
+                splashConfigFile.set(
+                    ext.androidAppPath.map { androidPath ->
+                        project.rootProject.layout.projectDirectory
+                            .file("$androidPath/src/main/kotlin/io/kmpbits/splash/SplashInit.kt")
+                    }.orElse(generatedKotlinDir.map { it.file("io/kmpbits/splash/SplashInit.kt") })
+                )
                 manifestFile.set(generatedManifestDir.map { it.file("AndroidManifest.xml") })
+                inPlaceManifestPath.set(
+                    ext.androidAppPath.map { androidPath ->
+                        project.rootProject.file("$androidPath/src/main/AndroidManifest.xml").absolutePath
+                    }
+                )
+
                 resourcePackage.set(composeResourcePackage(project))
 
                 logoSourceFile.set(
@@ -143,52 +161,80 @@ class KmpSplashPlugin : Plugin<Project> {
             }
         )
 
-        project.extensions.configure(KotlinMultiplatformExtension::class.java) {
-            sourceSets.matching { it.name == "androidMain" }.configureEach {
-                kotlin.srcDir(generatedKotlinDir)
-            }
-        }
-
-        project.plugins.withId("com.android.base") {
-            val android = project.extensions.findByName("android")
-            if (android != null) {
-                try {
-                    val sourceSets = android.javaClass.getMethod("getSourceSets").invoke(android) as org.gradle.api.NamedDomainObjectContainer<*>
-                    val main = sourceSets.getByName("main")
-                    
-                    // Capture original manifest before we redirect it
-                    val getManifest = main.javaClass.getMethod("getManifest")
-                    val manifestObj = getManifest.invoke(main)
-                    val getSrcFile = manifestObj.javaClass.getMethod("getSrcFile")
-                    val originalManifest = getSrcFile.invoke(manifestObj) as java.io.File
-                    
-                    val manifestToUse = if (originalManifest.exists()) {
-                        originalManifest
-                    } else {
-                        project.file("src/androidMain/AndroidManifest.xml").takeIf { it.exists() }
-                    }
-
-                    if (manifestToUse != null) {
-                        task.configure {
-                            inputManifestFile.set(manifestToUse)
+        // Defer sourcesets registration and AGP manipulation until after the user's splashScreen { }
+        // block has been evaluated, so androidAppPath is reliably readable.
+        project.afterEvaluate {
+            if (ext.androidAppPath.isPresent) {
+                // External androidApp mode: files land in src/main/ which AGP picks up automatically.
+                // No sourcesets registration or manifest redirect needed.
+                // Wire preBuild in androidApp to depend on our task by matching the project directory.
+                project.gradle.projectsEvaluated {
+                    val androidDir = project.rootProject.file(ext.androidAppPath.get())
+                    val androidProject = project.rootProject.allprojects.find { it.projectDir == androidDir }
+                    if (androidProject != null) {
+                        androidProject.tasks.configureEach {
+                            if (name == "preBuild") {
+                                dependsOn(task)
+                            }
                         }
+                    } else {
+                        project.logger.warn(
+                            "KmpSplash: no Gradle project found at '${ext.androidAppPath.get()}'. " +
+                            "Run :generateAndroidSplash manually before building the Android app."
+                        )
                     }
+                }
+                return@afterEvaluate
+            }
 
-                    // Add generated res
-                    val res = main.javaClass.getMethod("getRes").invoke(main)
-                    res.javaClass.getMethod("srcDir", Any::class.java).invoke(res, generatedResDir)
-
-                    // Add generated manifest (replaces original in AGP's view, so we copied it in the task)
-                    val srcFile = manifestObj.javaClass.getMethod("srcFile", Any::class.java)
-                    srcFile.invoke(manifestObj, generatedManifestDir.map { it.file("AndroidManifest.xml") })
-                } catch (_: Exception) {
+            // Classic KMP structure: register generated sources in androidMain.
+            project.extensions.configure(KotlinMultiplatformExtension::class.java) {
+                sourceSets.matching { it.name == "androidMain" }.configureEach {
+                    kotlin.srcDir(generatedKotlinDir)
                 }
             }
-        }
 
-        project.tasks.configureEach {
-            if (name == "preBuild") {
-                dependsOn(task)
+            project.plugins.withId("com.android.base") {
+                val android = project.extensions.findByName("android")
+                if (android != null) {
+                    try {
+                        val sourceSets = android.javaClass.getMethod("getSourceSets").invoke(android) as org.gradle.api.NamedDomainObjectContainer<*>
+                        val main = sourceSets.getByName("main")
+
+                        // Capture original manifest before we redirect it
+                        val getManifest = main.javaClass.getMethod("getManifest")
+                        val manifestObj = getManifest.invoke(main)
+                        val getSrcFile = manifestObj.javaClass.getMethod("getSrcFile")
+                        val originalManifest = getSrcFile.invoke(manifestObj) as java.io.File
+
+                        val manifestToUse = if (originalManifest.exists()) {
+                            originalManifest
+                        } else {
+                            project.file("src/androidMain/AndroidManifest.xml").takeIf { it.exists() }
+                        }
+
+                        if (manifestToUse != null) {
+                            task.configure {
+                                inputManifestFile.set(manifestToUse)
+                            }
+                        }
+
+                        // Add generated res
+                        val res = main.javaClass.getMethod("getRes").invoke(main)
+                        res.javaClass.getMethod("srcDir", Any::class.java).invoke(res, generatedResDir)
+
+                        // Add generated manifest (replaces original in AGP's view, so we copied it in the task)
+                        val srcFile = manifestObj.javaClass.getMethod("srcFile", Any::class.java)
+                        srcFile.invoke(manifestObj, generatedManifestDir.map { it.file("AndroidManifest.xml") })
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+
+            project.tasks.configureEach {
+                if (name == "preBuild") {
+                    dependsOn(task)
+                }
             }
         }
     }

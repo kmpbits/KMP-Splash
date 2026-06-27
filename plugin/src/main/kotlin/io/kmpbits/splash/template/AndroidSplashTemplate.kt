@@ -90,14 +90,16 @@ $providerEntry
             "<application$newAttrs$selfClosing>"
         }
 
-        // Inject provider: expand self-closing <application .../> or insert before </application>
-        val selfClosingRegex = """(<application[^>]*/)>""".toRegex(RegexOption.DOT_MATCHES_ALL)
-        result = if (selfClosingRegex.containsMatchIn(result)) {
-            selfClosingRegex.replace(result) { match ->
-                "${match.groupValues[1]}>\n$providerEntry\n    </application>"
+        // Inject provider only if not already present (guards against in-place re-runs)
+        if (!result.contains("io.kmpbits.splash.KmpSplashInitProvider")) {
+            val selfClosingRegex = """(<application[^>]*/)>""".toRegex(RegexOption.DOT_MATCHES_ALL)
+            result = if (selfClosingRegex.containsMatchIn(result)) {
+                selfClosingRegex.replace(result) { match ->
+                    "${match.groupValues[1]}>\n$providerEntry\n    </application>"
+                }
+            } else {
+                result.replace("</application>", "$providerEntry\n    </application>")
             }
-        } else {
-            result.replace("</application>", "$providerEntry\n    </application>")
         }
 
         return result

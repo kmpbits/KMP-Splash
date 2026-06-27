@@ -66,6 +66,15 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
     @get:Optional
     abstract val exitAnimation: Property<ExitAnimation>
 
+    /**
+     * When set, the manifest at this absolute path is patched in-place.
+     * Used when [androidAppPath][io.kmpbits.splash.KmpSplashExtension.androidAppPath] is configured.
+     * In this mode [inputManifestFile] and [manifestFile] are ignored for manifest generation.
+     */
+    @get:Input
+    @get:Optional
+    abstract val inPlaceManifestPath: Property<String>
+
     /** Points to the androidMain/res directory of the consuming module. */
     @get:OutputDirectory
     abstract val resOutputDir: DirectoryProperty
@@ -127,9 +136,18 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
     }
 
     private fun generateManifest() {
+        val inPlacePath = inPlaceManifestPath.orNull
+        if (inPlacePath != null) {
+            val target = java.io.File(inPlacePath)
+            val baseContent = if (target.exists()) target.readText() else null
+            target.parentFile?.mkdirs()
+            target.writeText(AndroidSplashTemplate.generateManifest(baseContent))
+            logger.lifecycle("KmpSplash: patched manifest at $inPlacePath")
+            return
+        }
+
         val file = manifestFile.orNull?.asFile ?: return
         val baseContent = inputManifestFile.orNull?.asFile?.takeIf { it.exists() }?.readText()
-        
         file.parentFile.mkdirs()
         file.writeText(AndroidSplashTemplate.generateManifest(baseContent))
         logger.lifecycle("KmpSplash: wrote ${file.absolutePath}")
