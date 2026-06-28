@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.4
+
+### Fixed
+- **AGP 9 + Gradle 9 compatibility** in `androidAppPath` mode. Previous versions used Java reflection to register the generated `res/` directory into the Android app's AGP source sets via `sourceSets.main.res.srcDir()`, which silently failed in AGP 9 (due to `getSrcFile()` removal) and in Gradle 9 (source set registration in `projectsEvaluated` is too late for variant finalization).
+- The generated logo drawable is now copied directly into the app's `src/main/res/drawable/` directory as a `doFirst` action on the `preBuild` task. This avoids Gradle 9's implicit-dependency validation, which previously triggered for every AGP task that reads `src/main/res` when a `Copy` task declared it as an `@OutputDirectory`.
+- Fixed `compileAndroidMain` failing with "implicit dependency" on the generated Kotlin directory — added explicit `dependsOn(generateAndroidSplash)` to all `compile*AndroidMain*` tasks.
+
+---
+
 ## 1.1.2
 
 ### Fixed
