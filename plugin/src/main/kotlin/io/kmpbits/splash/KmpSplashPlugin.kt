@@ -164,8 +164,10 @@ class KmpSplashPlugin : Plugin<Project> {
             }
 
             if (ext.androidAppPath.isPresent) {
-                // androidAppPath mode: copy the generated drawables directly into the app's
-                // static res directory. No source-set wiring needed — AGP always sees files there.
+                // androidAppPath mode: copy the generated drawables into the app's static res dir
+                // as a doFirst action on preBuild. Using doFirst (instead of a Copy task) avoids
+                // Gradle 9's implicit-dependency validation, which triggers for every AGP task that
+                // reads src/main/res when a Copy task declares it as an @OutputDirectory.
                 project.gradle.projectsEvaluated {
                     val androidDir = project.rootProject.file(ext.androidAppPath.get())
                     val androidProject = project.rootProject.allprojects.find { it.projectDir == androidDir }
@@ -177,25 +179,25 @@ class KmpSplashPlugin : Plugin<Project> {
                         return@projectsEvaluated
                     }
 
-                    val copyDrawable = androidProject.tasks.register(
-                        "copyKmpSplashDrawable",
-                        org.gradle.api.tasks.Copy::class.java,
-                    )
-                    copyDrawable.configure {
-                        group = "kmp-splash"
-                        description = "Copies kmpSplash-generated drawables into the app's src/main/res"
-                        from(generatedResDir)
-                        include("drawable/**", "drawable-night/**")
-                        into(androidProject.file("src/main/res"))
-                        dependsOn(task)
-                    }
+                    val appResDir = androidProject.file("src/main/res")
+                    val srcResDir = generatedResDir
 
                     androidProject.tasks.configureEach {
-                        if (name.startsWith("merge") && "Resources" in name) {
-                            dependsOn(copyDrawable)
-                        }
                         if (name == "preBuild") {
                             dependsOn(task)
+                            doFirst {
+                                val srcRes = srcResDir.get().asFile
+                                listOf("drawable", "drawable-night").forEach { dirName ->
+                                    val src = srcRes.resolve(dirName)
+                                    if (src.exists()) {
+                                        val dst = appResDir.resolve(dirName)
+                                        dst.mkdirs()
+                                        src.listFiles()?.forEach { f ->
+                                            f.copyTo(dst.resolve(f.name), overwrite = true)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
