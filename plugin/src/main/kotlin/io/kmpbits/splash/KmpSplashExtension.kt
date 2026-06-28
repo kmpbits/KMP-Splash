@@ -75,9 +75,10 @@ abstract class KmpSplashExtension {
      * Use this when your project uses the new KMP structure where the Android app
      * lives in a dedicated module (e.g. `"androidApp"`), separate from `composeApp`.
      *
-     * When set, the plugin writes generated resources and Kotlin sources directly into
-     * `{androidAppPath}/src/main/` and patches `AndroidManifest.xml` in-place.
-     * No sourcesets registration is needed — AGP picks up files from `src/main/` automatically.
+     * In either mode the plugin generates everything into the module's `build/` folder
+     * (resources, a patched copy of the `AndroidManifest.xml`, and Kotlin sources) and
+     * registers those generated directories into the Android app's source sets. Source
+     * files are never modified in place.
      *
      * When not set (default), the plugin targets the current module's `androidMain`
      * sourceSets, which is the classic KMP structure.

@@ -106,7 +106,7 @@ splashScreen {
 }
 ```
 
-When `androidAppPath` is set, the plugin writes the generated resources and Kotlin sources directly into `androidApp/src/main/` (which AGP picks up automatically) and patches `AndroidManifest.xml` in-place. The `preBuild` task in `androidApp` is automatically wired to run `generateAndroidSplash` first — no manual setup required.
+When `androidAppPath` is set, the plugin generates everything into the module's `build/generated/kmpSplash/` folder — the resources, the splash Kotlin source, and a patched **copy** of the `AndroidManifest.xml` — and registers those generated directories into the `androidApp` module's source sets. Your `src/main/` files are never modified. The `preBuild` task in `androidApp` is automatically wired to run `generateAndroidSplash` first — no manual setup required.
 
 #### SplashColor alternatives
 
@@ -245,12 +245,12 @@ fun MainViewController() = ComposeUIViewController {
 
 The Gradle plugin does the heavy lifting at build time so you never touch XML or native config files manually:
 
-- **Android:** generates `themes.xml` (and `values-night`), copies your logo drawable, patches the `AndroidManifest.xml` to apply the splash theme, and registers a `ContentProvider` that initialises runtime config before your `Activity` starts.
+- **Android:** generates `themes.xml` (and `values-night`), copies your logo drawable, and writes a patched **copy** of the `AndroidManifest.xml` — all into the `build/` folder — to apply the splash theme and register a `ContentProvider` that initialises runtime config before your `Activity` starts. Your source files are never modified.
 - **iOS:** generates the `SplashBackground` color asset and logo imageset in `Assets.xcassets`, and patches `Info.plist` and `project.pbxproj` to wire up `UILaunchScreen` — no Storyboard or Xcode required.
 
 | Platform | Native (Booting) | Compose (Loading) |
 | :--- | :--- | :--- |
-| **Android** | `themes.xml` + auto-patched `AndroidManifest.xml`. Uses `installSplashScreen()`. | `SplashActivity` controls visibility and runs the exit animation via `setOnExitAnimationListener`. |
+| **Android** | `themes.xml` + a patched copy of `AndroidManifest.xml` generated into `build/`. Uses `installSplashScreen()`. | `SplashActivity` controls visibility and runs the exit animation via `setOnExitAnimationListener`. |
 | **iOS** | Patches `Info.plist` with `UILaunchScreen`, generates `SplashBackground` color asset and logo imageset in `Assets.xcassets`. | `SplashConfig` uses `isSystemInDarkTheme()` to match the native screen exactly, then animates the exit with `AnimatedVisibility`. |
 
 ---

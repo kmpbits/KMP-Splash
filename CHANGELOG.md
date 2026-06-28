@@ -1,10 +1,18 @@
 # Changelog
 
-## 1.0.1
+## 1.1.2
+
+### Fixed
+- Android splash generation no longer modifies source files. In the `androidAppPath` (separate `androidApp` module) mode, the manifest is now patched into a **copy** under `build/` instead of in-place, and the logo drawable and `SplashInit.kt` are generated into `build/` as well. The generated directories are registered into the Android app's source sets, so AGP picks them up automatically — `src/main/` is left untouched.
+
+---
+
+## 1.1.1
 
 ### Changed
 - Update Android splash generation to use native resource identifiers
 - Update iOS SplashScreen to use intrinsic logo size and add logo naming guidelines to README
+- 
 ---
 
 ## 1.0.0
