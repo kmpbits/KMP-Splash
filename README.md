@@ -86,7 +86,7 @@ plugins {
 splashScreen {
     backgroundColor = SplashColor.hex("#FFFFFF")       // Light mode background
     backgroundColorNight = SplashColor.hex("#1A1A2E")  // Optional: dark mode background
-    logo = SplashLogo.resource("logo.png")             // File in composeResources/drawable/
+    logo = SplashLogo.resource("splash_logo.png")      // File in composeResources/drawable/ — 512×512 px recommended
     logoDark = SplashLogo.resource("logo_dark.png")    // Optional: dark mode logo
     exitAnimation = ExitAnimation.FadeOut(300)         // Optional: exit animation (Android + iOS)
     iosProjectPath = "iosApp/iosApp"                   // Optional: defaults to "iosApp/iosApp"
@@ -169,6 +169,12 @@ If you ever want to trigger the generation manually, you can run:
 
 > [!IMPORTANT]
 > **iOS Simulator Caching:** iOS heavily caches the launch screen. If you change the background color or logo and don't see the changes in the simulator, you must **restart the simulator** (or sometimes even delete and reinstall the app) for the new assets to be reflected.
+
+> [!WARNING]
+> **Avoid naming your logo file `logo.png` on iOS.** The filename becomes the `UIImageName` used by `UILaunchScreen`. The name `logo` conflicts with iOS internals and causes the image to be displayed fullscreen instead of at its natural size. Use a more specific name such as `splash_logo.png`, `app_logo.png`, or `ic_splash.png`.
+
+> [!TIP]
+> **Recommended logo size: 512×512 px.** On iOS, the native launch screen renders the image at its natural point size (pixels ÷ screen scale). A 512 px PNG displays at ~171 pt on @3x iPhones — roughly 45% of the screen width, which looks correct as a centred logo. Smaller sources (e.g. 250 px) will appear too large; larger sources will appear smaller.
 
 ---
 

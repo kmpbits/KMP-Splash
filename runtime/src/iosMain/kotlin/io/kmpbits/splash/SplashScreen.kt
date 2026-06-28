@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,6 +23,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.platform.LocalDensity
 
 /**
  * A Composable that displays a splash screen on iOS.
@@ -90,9 +93,16 @@ fun SplashScreen(
                     .background(background),
             ) {
                 if (logo != null) {
+                    val sizeModifier = with(LocalDensity.current) {
+                        val intrinsic = logo.intrinsicSize
+                        if (intrinsic.isSpecified) {
+                            Modifier.size(intrinsic.width.toDp(), intrinsic.height.toDp())
+                        } else Modifier
+                    }
                     Image(
                         painter = logo,
                         contentDescription = null,
+                        modifier = sizeModifier,
                     )
                 }
             }

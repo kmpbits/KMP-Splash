@@ -60,6 +60,7 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:Optional
     abstract val exitAnimation: Property<ExitAnimation>
 
+
     /** Resolved file handle — @Internal so Gradle skips its own (unfriendly) validation. */
     @get:Internal
     abstract val logoSourceFile: RegularFileProperty
@@ -105,7 +106,7 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
         if (lightPath == null && nightPath == null) return null
 
         val xcassets = xcassetsDir.asFile.get()
-        val name = logoResourceName.get() // We use the same name for the imageset
+        val name = logoResourceName.get()
         val imageset = xcassets.resolve("$name.imageset").also { it.mkdirs() }
 
         val lightFile = if (lightPath != null) logoSourceFile.asFile.get() else null
@@ -124,12 +125,7 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
             nightFile.copyTo(imageset.resolve(nightFile.name), overwrite = true)
         }
 
-        imageset.resolve("Contents.json").writeText(
-            logoContentsJson(
-                lightFile?.name,
-                nightFile?.name
-            )
-        )
+        imageset.resolve("Contents.json").writeText(logoContentsJson(lightFile?.name, nightFile?.name))
         return name
     }
 
