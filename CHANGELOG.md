@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+### Changed
+- Update Android splash generation to use native resource identifiers
+- Update iOS SplashScreen to use intrinsic logo size and add logo naming guidelines to README
+---
+
 ## 1.0.0
 
 ### New
