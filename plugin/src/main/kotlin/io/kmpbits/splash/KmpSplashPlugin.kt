@@ -146,12 +146,26 @@ class KmpSplashPlugin : Plugin<Project> {
             }
         )
 
-        // Defer sourcesets registration and AGP manipulation until after the user's splashScreen { }
-        // block has been evaluated, so androidAppPath is reliably readable.
         project.afterEvaluate {
+            // Register generated Kotlin sources in the KMP androidMain source set.
+            project.extensions.configure(KotlinMultiplatformExtension::class.java) {
+                sourceSets.matching { it.name == "androidMain" }.configureEach {
+                    kotlin.srcDir(generatedKotlinDir)
+                }
+            }
+
+            // Gradle 9 requires explicit task dependency for directories used as sources that
+            // are not declared as @OutputDirectory on the generating task (splashConfigFile is
+            // @OutputFile, so the parent kotlin dir has no implicit dependency).
+            project.tasks.configureEach {
+                if (name == "preBuild" || (name.startsWith("compile") && "AndroidMain" in name)) {
+                    dependsOn(task)
+                }
+            }
+
             if (ext.androidAppPath.isPresent) {
-                // External androidApp mode: generate into build/ and register those generated
-                // dirs into the androidApp project's AGP source sets — no source files touched.
+                // androidAppPath mode: copy the generated drawables directly into the app's
+                // static res directory. No source-set wiring needed — AGP always sees files there.
                 project.gradle.projectsEvaluated {
                     val androidDir = project.rootProject.file(ext.androidAppPath.get())
                     val androidProject = project.rootProject.allprojects.find { it.projectDir == androidDir }
@@ -163,73 +177,73 @@ class KmpSplashPlugin : Plugin<Project> {
                         return@projectsEvaluated
                     }
 
-                    wireAgpSources(
-                        agpProject = androidProject,
-                        task = task,
-                        generatedResDir = generatedResDir,
-                        generatedManifestDir = generatedManifestDir,
-                        generatedKotlinDir = generatedKotlinDir,
-                        registerKotlin = true,
+                    val copyDrawable = androidProject.tasks.register(
+                        "copyKmpSplashDrawable",
+                        org.gradle.api.tasks.Copy::class.java,
                     )
+                    copyDrawable.configure {
+                        group = "kmp-splash"
+                        description = "Copies kmpSplash-generated drawables into the app's src/main/res"
+                        from(generatedResDir)
+                        include("drawable/**", "drawable-night/**")
+                        into(androidProject.file("src/main/res"))
+                        dependsOn(task)
+                    }
 
                     androidProject.tasks.configureEach {
+                        if (name.startsWith("merge") && "Resources" in name) {
+                            dependsOn(copyDrawable)
+                        }
                         if (name == "preBuild") {
                             dependsOn(task)
                         }
                     }
                 }
-                return@afterEvaluate
-            }
-
-            // Classic KMP structure: register generated Kotlin sources in androidMain.
-            project.extensions.configure(KotlinMultiplatformExtension::class.java) {
-                sourceSets.matching { it.name == "androidMain" }.configureEach {
-                    kotlin.srcDir(generatedKotlinDir)
+            } else {
+                // Classic KMP library mode: wire the generated res into the shared module's AGP
+                // source sets so the drawable is compiled into the library's AAR.
+                project.plugins.withId("com.android.base") {
+                    val android = project.extensions.findByName("android") ?: return@withId
+                    try {
+                        val sourceSets = android.javaClass.getMethod("getSourceSets")
+                            .invoke(android) as org.gradle.api.NamedDomainObjectContainer<*>
+                        val main = sourceSets.getByName("main")
+                        val res = main.javaClass.getMethod("getRes").invoke(main)
+                        res.javaClass.getMethod("srcDir", Any::class.java).invoke(res, generatedResDir)
+                    } catch (e: Exception) {
+                        project.logger.warn(
+                            "KmpSplash: failed to wire res into ${project.path}: ${e.message}"
+                        )
+                    }
                 }
-            }
 
-            project.plugins.withId("com.android.base") {
-                wireAgpSources(
-                    agpProject = project,
-                    task = task,
-                    generatedResDir = generatedResDir,
-                    generatedManifestDir = generatedManifestDir,
-                    generatedKotlinDir = generatedKotlinDir,
-                    registerKotlin = false,
-                )
-            }
+                // Manifest redirect (best-effort).
+                val android = project.extensions.findByName("android")
+                if (android != null) {
+                    tryWireManifest(android, task, generatedManifestDir, project)
+                }
 
-            project.tasks.configureEach {
-                if (name == "preBuild") {
-                    dependsOn(task)
+                project.tasks.configureEach {
+                    if (name == "preBuild") dependsOn(task)
                 }
             }
         }
     }
 
     /**
-     * Registers the generated res, manifest (and optionally Kotlin) directories into [agpProject]'s
-     * `main` AGP source set, and points the task's manifest input at the project's original manifest
-     * so it can be patched into the build folder rather than in place.
-     *
-     * @param registerKotlin when true, the generated Kotlin dir is added to the AGP `main` source set
-     *   (standalone Android app module). For classic KMP modules the Kotlin dir is registered via the
-     *   Kotlin Multiplatform `androidMain` source set instead.
+     * Attempts to redirect AGP's manifest to the generated (patched) copy in the build folder.
+     * Best-effort: [getSrcFile] was removed in AGP 9, so this may log a warning and return.
      */
-    private fun wireAgpSources(
-        agpProject: Project,
+    private fun tryWireManifest(
+        android: Any,
         task: org.gradle.api.tasks.TaskProvider<GenerateAndroidSplashTask>,
-        generatedResDir: org.gradle.api.provider.Provider<org.gradle.api.file.Directory>,
         generatedManifestDir: org.gradle.api.provider.Provider<org.gradle.api.file.Directory>,
-        generatedKotlinDir: org.gradle.api.provider.Provider<org.gradle.api.file.Directory>,
-        registerKotlin: Boolean,
+        agpProject: Project,
     ) {
-        val android = agpProject.extensions.findByName("android") ?: return
         try {
-            val sourceSets = android.javaClass.getMethod("getSourceSets").invoke(android) as org.gradle.api.NamedDomainObjectContainer<*>
+            val sourceSets = android.javaClass.getMethod("getSourceSets").invoke(android)
+                as org.gradle.api.NamedDomainObjectContainer<*>
             val main = sourceSets.getByName("main")
-
-            // Capture original manifest before we redirect it, so the task patches a copy.
             val manifestObj = main.javaClass.getMethod("getManifest").invoke(main)
             val originalManifest = manifestObj.javaClass.getMethod("getSrcFile").invoke(manifestObj) as java.io.File
 
@@ -245,22 +259,11 @@ class KmpSplashPlugin : Plugin<Project> {
                 }
             }
 
-            // Add generated res
-            val res = main.javaClass.getMethod("getRes").invoke(main)
-            res.javaClass.getMethod("srcDir", Any::class.java).invoke(res, generatedResDir)
-
-            // Redirect AGP's manifest to the generated (patched) copy in build/
             manifestObj.javaClass.getMethod("srcFile", Any::class.java)
                 .invoke(manifestObj, generatedManifestDir.map { it.file("AndroidManifest.xml") })
-
-            // For a standalone Android app module, register the generated Kotlin source via AGP.
-            if (registerKotlin) {
-                val javaSrc = main.javaClass.getMethod("getJava").invoke(main)
-                javaSrc.javaClass.getMethod("srcDir", Any::class.java).invoke(javaSrc, generatedKotlinDir)
-            }
         } catch (e: Exception) {
             agpProject.logger.warn(
-                "KmpSplash: failed to wire generated splash sources into ${agpProject.path}: ${e.message}"
+                "KmpSplash: manifest redirect skipped for ${agpProject.path} (AGP API mismatch?): ${e.message}"
             )
         }
     }
