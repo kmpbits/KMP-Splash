@@ -325,10 +325,9 @@ class KmpSplashPlugin : Plugin<Project> {
 
 /**
  * Wires the generated res directory and a manifest patch into [variant] via AGP's public
- * Variant API. Shared by `androidAppPath` mode (where [androidProject] is a separate resolved
- * project) and classic mode (where [androidProject] is the same project the plugin is applied
- * to) — the wiring itself is identical either way; only how the caller obtained [variant]
- * differs.
+ * Variant API. Designed to be reusable from classic mode too (where [androidProject] would be
+ * the same project the plugin is applied to, not a separately resolved one) once that mode is
+ * migrated off its current reflection-based wiring — see the next task in this plan.
  *
  * Deliberately a top-level function rather than a member of [KmpSplashPlugin]: Gradle decorates
  * every Plugin implementation by reflecting over all of its declared methods (including private
