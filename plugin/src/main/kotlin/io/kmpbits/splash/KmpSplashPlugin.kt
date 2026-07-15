@@ -2,6 +2,7 @@ package io.kmpbits.splash
 
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.Variant
 import io.kmpbits.splash.tasks.GenerateAndroidSplashTask
 import io.kmpbits.splash.tasks.GenerateLaunchScreenTask
 import io.kmpbits.splash.tasks.PatchSplashManifestTask
@@ -9,6 +10,7 @@ import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.compose.ComposeExtension
 import org.jetbrains.compose.resources.ResourcesExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -247,32 +249,7 @@ class KmpSplashPlugin : Plugin<Project> {
                             ApplicationAndroidComponentsExtension::class.java
                         )
                         components.onVariants { variant ->
-                            val res = variant.sources.res
-                            if (res == null) {
-                                project.logger.warn(
-                                    "KmpSplash: androidApp variant '${variant.name}' has no res sources — " +
-                                    "splash resources were not wired in. This is unexpected for an application variant."
-                                )
-                            } else {
-                                res.addGeneratedSourceDirectory(
-                                    task,
-                                    GenerateAndroidSplashTask::resOutputDir,
-                                )
-                            }
-
-                            val patchManifest = androidProject.tasks.register(
-                                "patchKmpSplash${variant.name.replaceFirstChar { it.uppercase() }}Manifest",
-                                PatchSplashManifestTask::class.java,
-                            ) {
-                                group = "kmp-splash"
-                                description = "Patches the androidApp manifest with the splash theme and provider (${variant.name})"
-                            }
-                            variant.artifacts.use(patchManifest)
-                                .wiredWithFiles(
-                                    PatchSplashManifestTask::mergedManifest,
-                                    PatchSplashManifestTask::updatedManifest,
-                                )
-                                .toTransform(SingleArtifact.MERGED_MANIFEST)
+                            wireVariantResourcesAndManifest(androidProject, variant, task)
                         }
                     }
                 }
@@ -344,4 +321,54 @@ class KmpSplashPlugin : Plugin<Project> {
             )
         }
     }
+}
+
+/**
+ * Wires the generated res directory and a manifest patch into [variant] via AGP's public
+ * Variant API. Shared by `androidAppPath` mode (where [androidProject] is a separate resolved
+ * project) and classic mode (where [androidProject] is the same project the plugin is applied
+ * to) — the wiring itself is identical either way; only how the caller obtained [variant]
+ * differs.
+ *
+ * Deliberately a top-level function rather than a member of [KmpSplashPlugin]: Gradle decorates
+ * every Plugin implementation by reflecting over all of its declared methods (including private
+ * ones), which eagerly resolves each method's parameter/return types. If this function were a
+ * member and any consumer applied the plugin without AGP's Variant API on the classpath (e.g. an
+ * iOS-only KMP module with no Android target), that reflection would throw
+ * `NoClassDefFoundError: com/android/build/api/variant/Variant` and break plugin application
+ * entirely — even for builds that never touch Android. As a top-level function it compiles into
+ * a separate file-facade class that Gradle never decorates, so the type is only resolved when
+ * this function actually runs (i.e. once AGP is already present and applying its plugin).
+ */
+private fun wireVariantResourcesAndManifest(
+    androidProject: Project,
+    variant: Variant,
+    task: TaskProvider<GenerateAndroidSplashTask>,
+) {
+    val res = variant.sources.res
+    if (res == null) {
+        androidProject.logger.warn(
+            "KmpSplash: variant '${variant.name}' has no res sources — " +
+            "splash resources were not wired in. This is unexpected."
+        )
+    } else {
+        res.addGeneratedSourceDirectory(
+            task,
+            GenerateAndroidSplashTask::resOutputDir,
+        )
+    }
+
+    val patchManifest = androidProject.tasks.register(
+        "patchKmpSplash${variant.name.replaceFirstChar { it.uppercase() }}Manifest",
+        PatchSplashManifestTask::class.java,
+    ) {
+        group = "kmp-splash"
+        description = "Patches the manifest with the splash theme and provider (${variant.name})"
+    }
+    variant.artifacts.use(patchManifest)
+        .wiredWithFiles(
+            PatchSplashManifestTask::mergedManifest,
+            PatchSplashManifestTask::updatedManifest,
+        )
+        .toTransform(SingleArtifact.MERGED_MANIFEST)
 }
