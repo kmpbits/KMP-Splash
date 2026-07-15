@@ -234,15 +234,26 @@ class KmpSplashPlugin : Plugin<Project> {
                             ApplicationAndroidComponentsExtension::class.java
                         )
                         components.onVariants { variant ->
-                            variant.sources.res?.addGeneratedSourceDirectory(
-                                task,
-                                GenerateAndroidSplashTask::resOutputDir,
-                            )
+                            val res = variant.sources.res
+                            if (res == null) {
+                                project.logger.warn(
+                                    "KmpSplash: androidApp variant '${variant.name}' has no res sources — " +
+                                    "splash resources were not wired in. This is unexpected for an application variant."
+                                )
+                            } else {
+                                res.addGeneratedSourceDirectory(
+                                    task,
+                                    GenerateAndroidSplashTask::resOutputDir,
+                                )
+                            }
 
                             val patchManifest = androidProject.tasks.register(
                                 "patchKmpSplash${variant.name.replaceFirstChar { it.uppercase() }}Manifest",
                                 PatchAndroidAppManifestTask::class.java,
-                            )
+                            ) {
+                                group = "kmp-splash"
+                                description = "Patches the androidApp manifest with the splash theme and provider (${variant.name})"
+                            }
                             variant.artifacts.use(patchManifest)
                                 .wiredWithFiles(
                                     PatchAndroidAppManifestTask::mergedManifest,
