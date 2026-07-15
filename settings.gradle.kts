@@ -14,6 +14,7 @@ pluginManagement {
 include(":runtime")
 include(":sample:composeApp")
 include(":sample:shared")
+include(":sample:androidApp")
 
 dependencyResolutionManagement {
     repositories {
