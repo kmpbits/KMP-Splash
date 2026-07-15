@@ -1,7 +1,10 @@
 package io.kmpbits.splash
 
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import io.kmpbits.splash.tasks.GenerateAndroidSplashTask
 import io.kmpbits.splash.tasks.GenerateLaunchScreenTask
+import io.kmpbits.splash.tasks.PatchAndroidAppManifestTask
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -213,40 +216,39 @@ class KmpSplashPlugin : Plugin<Project> {
             }
 
             if (ext.androidAppPath.isPresent) {
-                // androidAppPath mode: copy the generated drawables into the app's static res dir
-                // as a doFirst action on preBuild. Using doFirst (instead of a Copy task) avoids
-                // Gradle 9's implicit-dependency validation, which triggers for every AGP task that
-                // reads src/main/res when a Copy task declares it as an @OutputDirectory.
-                project.gradle.projectsEvaluated {
-                    val androidDir = project.rootProject.file(ext.androidAppPath.get())
-                    val androidProject = project.rootProject.allprojects.find { it.projectDir == androidDir }
-                    if (androidProject == null) {
-                        project.logger.warn(
-                            "KmpSplash: no Gradle project found at '${ext.androidAppPath.get()}'. " +
-                            "Run :generateAndroidSplash manually before building the Android app."
+                // androidAppPath mode: wire the generated res directory and a manifest patch
+                // directly into the androidApp module's own variants, via AGP's public Variant
+                // API. This is a documented, stable extension point — unlike the reflection this
+                // plugin used before (broken by AGP 9's removal of getSrcFile()) or the doFirst
+                // drawable-only copy hack that replaced it, which never covered values/manifest.
+                val androidDir = project.rootProject.file(ext.androidAppPath.get())
+                val androidProject = project.rootProject.allprojects.find { it.projectDir == androidDir }
+                if (androidProject == null) {
+                    project.logger.warn(
+                        "KmpSplash: no Gradle project found at '${ext.androidAppPath.get()}'. " +
+                        "Run :generateAndroidSplash manually before building the Android app."
+                    )
+                } else {
+                    androidProject.plugins.withId("com.android.application") {
+                        val components = androidProject.extensions.getByType(
+                            ApplicationAndroidComponentsExtension::class.java
                         )
-                        return@projectsEvaluated
-                    }
+                        components.onVariants { variant ->
+                            variant.sources.res?.addGeneratedSourceDirectory(
+                                task,
+                                GenerateAndroidSplashTask::resOutputDir,
+                            )
 
-                    val appResDir = androidProject.file("src/main/res")
-                    val srcResDir = generatedResDir
-
-                    androidProject.tasks.configureEach {
-                        if (name == "preBuild") {
-                            dependsOn(task)
-                            doFirst {
-                                val srcRes = srcResDir.get().asFile
-                                listOf("drawable", "drawable-night").forEach { dirName ->
-                                    val src = srcRes.resolve(dirName)
-                                    if (src.exists()) {
-                                        val dst = appResDir.resolve(dirName)
-                                        dst.mkdirs()
-                                        src.listFiles()?.forEach { f ->
-                                            f.copyTo(dst.resolve(f.name), overwrite = true)
-                                        }
-                                    }
-                                }
-                            }
+                            val patchManifest = androidProject.tasks.register(
+                                "patchKmpSplash${variant.name.replaceFirstChar { it.uppercase() }}Manifest",
+                                PatchAndroidAppManifestTask::class.java,
+                            )
+                            variant.artifacts.use(patchManifest)
+                                .wiredWithFiles(
+                                    PatchAndroidAppManifestTask::mergedManifest,
+                                    PatchAndroidAppManifestTask::updatedManifest,
+                                )
+                                .toTransform(SingleArtifact.MERGED_MANIFEST)
                         }
                     }
                 }
