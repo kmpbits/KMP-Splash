@@ -5,12 +5,12 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class PatchAndroidAppManifestTaskTest {
+class PatchSplashManifestTaskTest {
 
     @Test
     fun `patch adds theme and provider, overwriting an existing theme attribute`() {
         val project = ProjectBuilder.builder().build()
-        val task = project.tasks.create("patchTest", PatchAndroidAppManifestTask::class.java)
+        val task = project.tasks.create("patchTest", PatchSplashManifestTask::class.java)
 
         val input = File(project.projectDir, "input/AndroidManifest.xml").also {
             it.parentFile.mkdirs()
