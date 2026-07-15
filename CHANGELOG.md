@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0
+
+### Fixed
+- **`androidAppPath` mode now fully integrates into the target module.** Previously only the logo drawable was copied into the `androidApp` module — `values`/`values-night` (the splash theme and `backgroundColorNight`) and the manifest patch (the `android:theme` attribute and the `KmpSplashInitProvider` entry) never reached it, so dark mode and the splash theme itself silently didn't apply. This is now wired directly into the `androidApp` module via AGP's public Variant API (`onVariants`, `addGeneratedSourceDirectory`, and a `MERGED_MANIFEST` transform), replacing the old drawable-only file-copy workaround. Requires AGP 8.0+, and one required one-time setup step: add `evaluationDependsOn(":yourSharedModule")` to your `androidApp` module's `build.gradle.kts` (see README for details) — Gradle's default subproject evaluation order otherwise runs the wiring too late; the plugin logs an actionable warning if this is missing.
+- **The inferred Compose resource package now matches your actual configuration.** Previously the plugin guessed `{rootProject.name}.{module path}.generated.resources`, which didn't match Compose's own default formula and broke entirely with a custom `compose.resources.packageOfResClass`. The plugin now reads the real configured value, falls back to Compose's own default formula, and exposes a new `splashScreen { resourcePackage = "..." }` override as an escape hatch.
+- **`splash-runtime`'s `androidx.activity` dependency is now `api` instead of `implementation`.** Any consumer subclassing `SplashActivity` in their own module (which every consumer does) previously failed to compile with "cannot access ComponentActivity" once dependency graphs got deep enough to expose the gap — e.g. the new androidApp-module scenario above. `ComponentActivity` (the supertype `SplashActivity` extends) is now correctly exposed transitively.
+
+---
+
 ## 1.1.4
 
 ### Fixed
