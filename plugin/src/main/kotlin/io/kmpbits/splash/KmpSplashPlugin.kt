@@ -199,6 +199,37 @@ class KmpSplashPlugin : Plugin<Project> {
             }
         )
 
+        // Classic-mode Variant API wiring is registered eagerly here (NOT inside the
+        // project.afterEvaluate block below). AGP's own internal variant-finalization also runs
+        // via a project.afterEvaluate callback, registered when com.android.application or
+        // com.android.library is applied — which, in a typical build script, happens before this
+        // plugin is applied. Gradle fires same-project afterEvaluate callbacks in registration
+        // order, so deferring our own onVariants registration into OUR afterEvaluate loses the
+        // race against AGP's already-queued one: AGP fires its variant callbacks first, and by
+        // the time ours ran it was "too late to add actions." plugins.withId(...) is itself
+        // already safely order-independent — it fires whenever that plugin is applied, whether
+        // that's before or after this one — so no afterEvaluate wrapper is needed here. The
+        // per-variant lambda only executes once AGP itself decides it's safe to compute variants
+        // (always after full project configuration), so it's safe to read
+        // ext.androidAppPath.isPresent inside it to skip this wiring when androidAppPath mode
+        // applies instead (that mode wires a *different* project's variants, handled below).
+        project.plugins.withId("com.android.application") {
+            val components = project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
+            components.onVariants { variant ->
+                if (!ext.androidAppPath.isPresent) {
+                    wireVariantResourcesAndManifest(project, variant, task)
+                }
+            }
+        }
+        project.plugins.withId("com.android.library") {
+            val components = project.extensions.getByType(LibraryAndroidComponentsExtension::class.java)
+            components.onVariants { variant ->
+                if (!ext.androidAppPath.isPresent) {
+                    wireVariantResourcesAndManifest(project, variant, task)
+                }
+            }
+        }
+
         project.afterEvaluate {
             // Register generated Kotlin sources in the KMP androidMain source set.
             project.extensions.configure(KotlinMultiplatformExtension::class.java) {
@@ -251,27 +282,6 @@ class KmpSplashPlugin : Plugin<Project> {
                             wireVariantResourcesAndManifest(androidProject, variant, task)
                         }
                     }
-                }
-            } else {
-                // Classic KMP mode: wire the generated res directory and a manifest patch into
-                // this same project's own variants, via AGP's public Variant API. composeApp can
-                // be set up as either com.android.application or com.android.library, so both
-                // plugin ids are handled — at most one fires for a given project.
-                project.plugins.withId("com.android.application") {
-                    val components = project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
-                    components.onVariants { variant ->
-                        wireVariantResourcesAndManifest(project, variant, task)
-                    }
-                }
-                project.plugins.withId("com.android.library") {
-                    val components = project.extensions.getByType(LibraryAndroidComponentsExtension::class.java)
-                    components.onVariants { variant ->
-                        wireVariantResourcesAndManifest(project, variant, task)
-                    }
-                }
-
-                project.tasks.configureEach {
-                    if (name == "preBuild") dependsOn(task)
                 }
             }
         }
