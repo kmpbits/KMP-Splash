@@ -165,7 +165,6 @@ class KmpSplashPlugin : Plugin<Project> {
     private fun registerAndroidTask(project: Project, ext: KmpSplashExtension) {
         val generatedResDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/res")
         val generatedKotlinDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/kotlin")
-        val generatedManifestDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/manifest")
 
         val task = project.tasks.register(
             "generateAndroidSplash",
@@ -180,7 +179,6 @@ class KmpSplashPlugin : Plugin<Project> {
                 // Everything is generated into the build folder; source files are never modified.
                 resOutputDir.set(generatedResDir)
                 splashConfigFile.set(generatedKotlinDir.map { it.file("io/kmpbits/splash/SplashInit.kt") })
-                manifestFile.set(generatedManifestDir.map { it.file("AndroidManifest.xml") })
 
                 resourcePackage.set(composeResourcePackage(project, ext))
 
