@@ -31,7 +31,7 @@ Creating a seamless startup experience in Compose Multiplatform is notoriously d
 
 - Kotlin **2.1.0+**
 - Compose Multiplatform **1.7.0+**
-- Android: `androidx.core:core-splashscreen` **1.2.0+**
+- Android: `androidx.core:core-splashscreen` **1.2.0+**, AGP **8.0+**
 - iOS: Xcode 14+ (uses `UILaunchScreen` plist key)
 
 ---
@@ -109,7 +109,7 @@ splashScreen {
 
 When `androidAppPath` is set, the plugin generates everything into the module's `build/generated/kmpSplash/` folder — the resources (including dark mode), the splash Kotlin source, and the splash theme + provider — and wires all of it directly into the `androidApp` module's own build variants via AGP's Variant API. Your `src/main/` files are never modified.
 
-This requires **AGP 8.0+** in the `androidApp` module, and assumes `androidApp` has a project dependency on the module applying the plugin (e.g. `implementation(project(":shared"))`), so the generated splash initialization class is on its runtime classpath — which is the case for every current KMP-wizard "separate androidApp module" template.
+This assumes `androidApp` has a project dependency on the module applying the plugin (e.g. `implementation(project(":shared"))`), so the generated splash initialization class is on its runtime classpath — which is the case for every current KMP-wizard "separate androidApp module" template.
 
 **One required setup step:** add `evaluationDependsOn(":shared")` (replace `":shared"` with the actual path of the module that applies the splash plugin) to the top of your `androidApp` module's `build.gradle.kts`. Gradle evaluates subprojects in path-alphabetical order by default, and if `androidApp` happens to sort before the module applying the plugin, the plugin's wiring would otherwise run too late — the plugin detects this case and logs a warning naming the exact fix if you forget this step.
 
