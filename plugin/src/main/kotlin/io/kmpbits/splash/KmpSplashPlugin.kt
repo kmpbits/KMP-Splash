@@ -2,6 +2,7 @@ package io.kmpbits.splash
 
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.Variant
 import io.kmpbits.splash.tasks.GenerateAndroidSplashTask
 import io.kmpbits.splash.tasks.GenerateLaunchScreenTask
@@ -254,71 +255,27 @@ class KmpSplashPlugin : Plugin<Project> {
                     }
                 }
             } else {
-                // Classic KMP library mode: wire the generated res into the shared module's AGP
-                // source sets so the drawable is compiled into the library's AAR.
-                project.plugins.withId("com.android.base") {
-                    val android = project.extensions.findByName("android") ?: return@withId
-                    try {
-                        val sourceSets = android.javaClass.getMethod("getSourceSets")
-                            .invoke(android) as org.gradle.api.NamedDomainObjectContainer<*>
-                        val main = sourceSets.getByName("main")
-                        val res = main.javaClass.getMethod("getRes").invoke(main)
-                        res.javaClass.getMethod("srcDir", Any::class.java).invoke(res, generatedResDir)
-                    } catch (e: Exception) {
-                        project.logger.warn(
-                            "KmpSplash: failed to wire res into ${project.path}: ${e.message}"
-                        )
+                // Classic KMP mode: wire the generated res directory and a manifest patch into
+                // this same project's own variants, via AGP's public Variant API. composeApp can
+                // be set up as either com.android.application or com.android.library, so both
+                // plugin ids are handled — at most one fires for a given project.
+                project.plugins.withId("com.android.application") {
+                    val components = project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
+                    components.onVariants { variant ->
+                        wireVariantResourcesAndManifest(project, variant, task)
                     }
                 }
-
-                // Manifest redirect (best-effort).
-                val android = project.extensions.findByName("android")
-                if (android != null) {
-                    tryWireManifest(android, task, generatedManifestDir, project)
+                project.plugins.withId("com.android.library") {
+                    val components = project.extensions.getByType(LibraryAndroidComponentsExtension::class.java)
+                    components.onVariants { variant ->
+                        wireVariantResourcesAndManifest(project, variant, task)
+                    }
                 }
 
                 project.tasks.configureEach {
                     if (name == "preBuild") dependsOn(task)
                 }
             }
-        }
-    }
-
-    /**
-     * Attempts to redirect AGP's manifest to the generated (patched) copy in the build folder.
-     * Best-effort: [getSrcFile] was removed in AGP 9, so this may log a warning and return.
-     */
-    private fun tryWireManifest(
-        android: Any,
-        task: org.gradle.api.tasks.TaskProvider<GenerateAndroidSplashTask>,
-        generatedManifestDir: org.gradle.api.provider.Provider<org.gradle.api.file.Directory>,
-        agpProject: Project,
-    ) {
-        try {
-            val sourceSets = android.javaClass.getMethod("getSourceSets").invoke(android)
-                as org.gradle.api.NamedDomainObjectContainer<*>
-            val main = sourceSets.getByName("main")
-            val manifestObj = main.javaClass.getMethod("getManifest").invoke(main)
-            val originalManifest = manifestObj.javaClass.getMethod("getSrcFile").invoke(manifestObj) as java.io.File
-
-            val manifestToUse = if (originalManifest.exists()) {
-                originalManifest
-            } else {
-                agpProject.file("src/androidMain/AndroidManifest.xml").takeIf { it.exists() }
-            }
-
-            if (manifestToUse != null) {
-                task.configure {
-                    inputManifestFile.set(manifestToUse)
-                }
-            }
-
-            manifestObj.javaClass.getMethod("srcFile", Any::class.java)
-                .invoke(manifestObj, generatedManifestDir.map { it.file("AndroidManifest.xml") })
-        } catch (e: Exception) {
-            agpProject.logger.warn(
-                "KmpSplash: manifest redirect skipped for ${agpProject.path} (AGP API mismatch?): ${e.message}"
-            )
         }
     }
 }
