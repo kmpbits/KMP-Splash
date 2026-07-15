@@ -228,6 +228,19 @@ class KmpSplashPlugin : Plugin<Project> {
                         "KmpSplash: no Gradle project found at '${ext.androidAppPath.get()}'. " +
                         "Run :generateAndroidSplash manually before building the Android app."
                     )
+                } else if (androidProject.state.executed) {
+                    // Gradle evaluates subprojects in path-alphabetical order by default. If
+                    // androidProject sorts before this project, it will already be fully evaluated
+                    // by the time we get here — including AGP's own variant computation — and
+                    // registering onVariants now would be silently ignored or throw AGP's cryptic
+                    // "too late to add actions" exception. Fail loud with an actionable message
+                    // instead of letting that happen.
+                    project.logger.warn(
+                        "KmpSplash: '${androidProject.path}' was already evaluated before " +
+                        "'${project.path}' (this project), so splash resources/manifest could not " +
+                        "be wired in. Add `evaluationDependsOn(\"${project.path}\")` to " +
+                        "'${androidProject.path}'s build file to fix the evaluation order."
+                    )
                 } else {
                     androidProject.plugins.withId("com.android.application") {
                         val components = androidProject.extensions.getByType(
