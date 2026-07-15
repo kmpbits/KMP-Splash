@@ -4,12 +4,22 @@ import io.kmpbits.splash.SplashLogo
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
+    alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.compose.compiler)
     id("io.github.kmpbits.splash")
 }
 
 kotlin {
     jvmToolchain(17)
     androidTarget()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(project(":runtime"))
+            implementation(compose.runtime)
+            implementation(compose.ui)
+        }
+    }
 }
 
 splashScreen {

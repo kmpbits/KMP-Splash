@@ -34,7 +34,7 @@ kotlin {
             implementation(kotlin("test"))
         }
         androidMain.dependencies {
-            implementation(libs.androidx.activity.core)
+            api(libs.androidx.activity.core)
             implementation(libs.androidx.splashscreen)
         }
         androidUnitTest.dependencies {
