@@ -20,8 +20,10 @@ import org.gradle.api.tasks.TaskAction
  * This task:
  * 1. Generates `theme.xml` in `res/values` and `res/values-night`.
  * 2. Copies the logo drawable to `res/drawable` and `res/drawable-night`.
- * 3. Generates a temporary `AndroidManifest.xml` to apply the theme.
- * 4. Generates `SplashInit.kt` for Compose-side configuration.
+ * 3. Generates `SplashInit.kt` for Compose-side configuration.
+ *
+ * Manifest patching itself is handled separately by [PatchSplashManifestTask], which operates
+ * directly on AGP's merged manifest artifact.
  */
 abstract class GenerateAndroidSplashTask : DefaultTask() {
 
@@ -52,15 +54,6 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
     @get:OutputFile
     @get:Optional
     abstract val splashConfigFile: RegularFileProperty
-
-    @get:OutputFile
-    @get:Optional
-    abstract val manifestFile: RegularFileProperty
-
-    @get:InputFile
-    @get:Optional
-    @get:org.gradle.api.tasks.PathSensitive(org.gradle.api.tasks.PathSensitivity.RELATIVE)
-    abstract val inputManifestFile: RegularFileProperty
 
     @get:Input
     @get:Optional
@@ -122,18 +115,7 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
             }
         }
 
-        generateManifest()
         generateSplashConfig()
-    }
-
-    private fun generateManifest() {
-        val file = manifestFile.orNull?.asFile ?: return
-        // Patch a copy of the original manifest into the build folder; the source manifest
-        // is never modified in place.
-        val baseContent = inputManifestFile.orNull?.asFile?.takeIf { it.exists() }?.readText()
-        file.parentFile.mkdirs()
-        file.writeText(AndroidSplashTemplate.generateManifest(baseContent))
-        logger.lifecycle("KmpSplash: wrote ${file.absolutePath}")
     }
 
     private fun generateSplashConfig() {
