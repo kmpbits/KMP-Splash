@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0
+
+### Changed
+- **Classic mode now also uses AGP's public Variant API**, retiring the last of the plugin's reflection into AGP internals (the `sourceSets.main.res`/`sourceSets.main.manifest` reflection, including the `getSrcFile()` call that AGP 9 removed). Behavior is unchanged — same generated theme, dark mode, drawable, and provider entry — this is a mechanism swap, not a feature change. **Requires AGP 8.0+**, now a plugin-wide requirement rather than `androidAppPath`-mode-only.
+- `PatchAndroidAppManifestTask` renamed to `PatchSplashManifestTask`, since it's shared by both modes now rather than being androidApp-specific. Internal rename only — not part of the public DSL.
+
+### Fixed
+- Classic mode's Variant API wiring is now registered eagerly at plugin-apply time instead of inside a deferred `afterEvaluate` callback. The deferred version raced against AGP's own internal `afterEvaluate` (registered earlier, when `com.android.application`/`com.android.library` is applied) and lost, throwing "It is too late to add actions as the callbacks already executed" for any classic-mode project. Caught by rebuilding a real sample APK during this change, not by unit tests alone.
+
+---
+
 ## 1.2.0
 
 ### Fixed
