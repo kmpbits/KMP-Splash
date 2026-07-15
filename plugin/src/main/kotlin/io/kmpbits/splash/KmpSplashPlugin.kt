@@ -141,7 +141,7 @@ class KmpSplashPlugin : Plugin<Project> {
     /** Replicates Compose Resources' own default package formula (`ResourcesDSL.kt`, internal there). */
     private fun composeDefaultResourcePackage(project: Project): String {
         fun String.asUnderscoredIdentifier() =
-            replace('-', '_').let { if (isNotEmpty() && first().isDigit()) "_$this" else this }
+            replace('-', '_').let { if (it.isNotEmpty() && it.first().isDigit()) "_$it" else it }
         val groupName = project.group.toString().lowercase().asUnderscoredIdentifier()
         val moduleName = project.name.lowercase().asUnderscoredIdentifier()
         val id = if (groupName.isNotEmpty()) "$groupName.$moduleName" else moduleName
