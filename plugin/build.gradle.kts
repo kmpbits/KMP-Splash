@@ -7,12 +7,14 @@ plugins {
 
 repositories {
     gradlePluginPortal()
+    google()
     mavenCentral()
 }
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
     compileOnly("org.jetbrains.compose:compose-gradle-plugin:1.7.3")
+    compileOnly("com.android.tools.build:gradle-api:8.0.0")
     testImplementation(kotlin("test"))
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.compose:compose-gradle-plugin:1.7.3")
