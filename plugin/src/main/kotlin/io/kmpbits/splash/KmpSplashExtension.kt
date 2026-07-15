@@ -94,4 +94,23 @@ abstract class KmpSplashExtension {
     @get:Input
     @get:Optional
     abstract val androidAppPath: Property<String>
+
+    /**
+     * Overrides the inferred Compose Multiplatform resource package (the package that
+     * contains the generated `Res` class, e.g. `com.example.myapp.generated.resources`).
+     *
+     * By default, the plugin reads this from `compose { resources { packageOfResClass = ... } }`
+     * if you've set it, or replicates Compose's own default formula if you haven't. Set this
+     * explicitly only if that auto-detection doesn't find the right value for your project.
+     *
+     * Example:
+     * ```kotlin
+     * splashScreen {
+     *     resourcePackage = "com.example.myapp.generated.resources"
+     * }
+     * ```
+     */
+    @get:Input
+    @get:Optional
+    abstract val resourcePackage: Property<String>
 }
