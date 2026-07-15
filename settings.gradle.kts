@@ -13,6 +13,7 @@ pluginManagement {
 
 include(":runtime")
 include(":sample:composeApp")
+include(":sample:shared")
 
 dependencyResolutionManagement {
     repositories {
