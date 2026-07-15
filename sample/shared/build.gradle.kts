@@ -1,3 +1,4 @@
+import io.kmpbits.splash.ExitAnimation
 import io.kmpbits.splash.SplashColor
 import io.kmpbits.splash.SplashLogo
 
@@ -26,6 +27,7 @@ splashScreen {
     backgroundColor = SplashColor.white
     backgroundColorNight = SplashColor.hex("#1A1A2E")
     logo = SplashLogo.resource("logo.png")
+    exitAnimation = ExitAnimation.SlideUp()
     androidAppPath = "sample/androidApp"
 }
 
