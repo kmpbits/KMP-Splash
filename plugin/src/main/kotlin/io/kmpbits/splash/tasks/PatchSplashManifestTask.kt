@@ -8,16 +8,16 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 /**
- * AGP `MERGED_MANIFEST` transform task for `androidAppPath` mode.
+ * AGP `MERGED_MANIFEST` transform task, used by both `androidAppPath` mode (patching a separate
+ * androidApp module's manifest) and classic mode (patching the same module's own manifest).
  *
- * Patches the androidApp module's already-merged manifest to set the splash theme on
- * `<application>` and inject the `KmpSplashInitProvider` `<provider>` entry, reusing the same
- * [AndroidSplashTemplate.generateManifest] logic classic mode already applies to its own
- * manifest. Because this runs on the already-merged manifest (not a pre-merge library manifest),
- * it deterministically overwrites any existing `android:theme` on `<application>` instead of
- * risking an AGP manifest-merge conflict.
+ * Patches the already-merged manifest to set the splash theme on `<application>` and inject the
+ * `KmpSplashInitProvider` `<provider>` entry, via [AndroidSplashTemplate.generateManifest].
+ * Because this runs on the already-merged manifest (not a pre-merge library manifest), it
+ * deterministically overwrites any existing `android:theme` on `<application>` instead of risking
+ * an AGP manifest-merge conflict.
  */
-abstract class PatchAndroidAppManifestTask : DefaultTask() {
+abstract class PatchSplashManifestTask : DefaultTask() {
 
     @get:InputFile
     abstract val mergedManifest: RegularFileProperty

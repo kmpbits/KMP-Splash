@@ -4,7 +4,7 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import io.kmpbits.splash.tasks.GenerateAndroidSplashTask
 import io.kmpbits.splash.tasks.GenerateLaunchScreenTask
-import io.kmpbits.splash.tasks.PatchAndroidAppManifestTask
+import io.kmpbits.splash.tasks.PatchSplashManifestTask
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -262,15 +262,15 @@ class KmpSplashPlugin : Plugin<Project> {
 
                             val patchManifest = androidProject.tasks.register(
                                 "patchKmpSplash${variant.name.replaceFirstChar { it.uppercase() }}Manifest",
-                                PatchAndroidAppManifestTask::class.java,
+                                PatchSplashManifestTask::class.java,
                             ) {
                                 group = "kmp-splash"
                                 description = "Patches the androidApp manifest with the splash theme and provider (${variant.name})"
                             }
                             variant.artifacts.use(patchManifest)
                                 .wiredWithFiles(
-                                    PatchAndroidAppManifestTask::mergedManifest,
-                                    PatchAndroidAppManifestTask::updatedManifest,
+                                    PatchSplashManifestTask::mergedManifest,
+                                    PatchSplashManifestTask::updatedManifest,
                                 )
                                 .toTransform(SingleArtifact.MERGED_MANIFEST)
                         }
