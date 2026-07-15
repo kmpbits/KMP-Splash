@@ -5,6 +5,9 @@ import io.kmpbits.splash.tasks.GenerateLaunchScreenTask
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
+import org.jetbrains.compose.ComposeExtension
+import org.jetbrains.compose.resources.ResourcesExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
@@ -79,7 +82,7 @@ class KmpSplashPlugin : Plugin<Project> {
                 logoNightResourceName.set(
                     ext.logoDark.map { it.fileName.substringAfterLast('/').substringBeforeLast('.') }
                 )
-                resourcePackage.set(composeResourcePackage(project))
+                resourcePackage.set(composeResourcePackage(project, ext))
                 exitAnimation.set(ext.exitAnimation)
             }
         )
@@ -100,7 +103,53 @@ class KmpSplashPlugin : Plugin<Project> {
         }
     }
 
-    private fun composeResourcePackage(project: Project): String {
+    /**
+     * Resolves the Compose Multiplatform resource package, in priority order:
+     * 1. `splashScreen { resourcePackage = "..." }`, if set.
+     * 2. The real `compose { resources { packageOfResClass = "..." } }` value, if the Compose
+     *    Resources extension is present and that value is non-empty.
+     * 3. Compose's own default formula (`{group}.{module name}.generated.resources`), if the
+     *    extension is present but packageOfResClass wasn't set.
+     * 4. A legacy heuristic, only if the Compose Resources extension isn't found at all.
+     *
+     * Wrapped in [Project.provider] because `compose { resources { ... } }` in the consumer's
+     * build script runs *after* this plugin's `apply()` returns — reading the extension eagerly
+     * here would see its pre-configuration empty default.
+     *
+     * `compose-gradle-plugin` is only a `compileOnly` dependency of this plugin, so on projects
+     * that never apply the Compose Gradle plugin, `ComposeExtension`/`ResourcesExtension` aren't
+     * merely absent as extensions — their classes aren't on the runtime classpath at all, which
+     * throws [NoClassDefFoundError] (a [LinkageError]) rather than returning null. Guard for that.
+     */
+    private fun composeResourcePackage(project: Project, ext: KmpSplashExtension): Provider<String> =
+        project.provider {
+            ext.resourcePackage.orNull?.takeIf { it.isNotBlank() } ?: run {
+                val resourcesExt = try {
+                    project.extensions.findByType(ComposeExtension::class.java)
+                        ?.extensions?.findByType(ResourcesExtension::class.java)
+                } catch (e: LinkageError) {
+                    null
+                }
+                when {
+                    resourcesExt == null -> legacyResourcePackageHeuristic(project)
+                    resourcesExt.packageOfResClass.isNotEmpty() -> resourcesExt.packageOfResClass
+                    else -> composeDefaultResourcePackage(project)
+                }
+            }
+        }
+
+    /** Replicates Compose Resources' own default package formula (`ResourcesDSL.kt`, internal there). */
+    private fun composeDefaultResourcePackage(project: Project): String {
+        fun String.asUnderscoredIdentifier() =
+            replace('-', '_').let { if (isNotEmpty() && first().isDigit()) "_$this" else this }
+        val groupName = project.group.toString().lowercase().asUnderscoredIdentifier()
+        val moduleName = project.name.lowercase().asUnderscoredIdentifier()
+        val id = if (groupName.isNotEmpty()) "$groupName.$moduleName" else moduleName
+        return "$id.generated.resources"
+    }
+
+    /** Last-resort fallback when the Compose Resources extension isn't present at all. */
+    private fun legacyResourcePackageHeuristic(project: Project): String {
         fun String.normalize() = replace(Regex("[^a-zA-Z0-9]"), "_").lowercase()
         val root = project.rootProject.name.normalize()
         val sub = project.path.trimStart(':').split(':').joinToString(".") { it.normalize() }
@@ -127,7 +176,7 @@ class KmpSplashPlugin : Plugin<Project> {
                 splashConfigFile.set(generatedKotlinDir.map { it.file("io/kmpbits/splash/SplashInit.kt") })
                 manifestFile.set(generatedManifestDir.map { it.file("AndroidManifest.xml") })
 
-                resourcePackage.set(composeResourcePackage(project))
+                resourcePackage.set(composeResourcePackage(project, ext))
 
                 logoSourceFile.set(
                     project.layout.file(ext.logo.map { logo ->
