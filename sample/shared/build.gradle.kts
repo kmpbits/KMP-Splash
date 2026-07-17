@@ -11,6 +11,9 @@ plugins {
 }
 
 kotlin {
+    // Regression guard: generated code (e.g. KmpSplashInitProvider) must compile
+    // in consumer modules that enable explicit API mode.
+    explicitApi()
     jvmToolchain(17)
     androidTarget()
 
