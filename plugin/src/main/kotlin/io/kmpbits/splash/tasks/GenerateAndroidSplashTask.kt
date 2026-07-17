@@ -156,8 +156,10 @@ import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color$painterImport
 
+// internal keeps it out of the module's public API (and satisfies explicitApi mode);
+// the JVM class stays public, so Android can still instantiate it from the manifest.
 @Suppress("DEPRECATION")
-class KmpSplashInitProvider : ContentProvider() {
+internal class KmpSplashInitProvider : ContentProvider() {
     override fun onCreate(): Boolean {
 $bgColorLine$nightColorLine$logoBlock$exitAnimLine
         return true

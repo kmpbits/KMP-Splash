@@ -8,6 +8,7 @@
 
 ### Fixed
 - Classic mode's Variant API wiring is now registered eagerly at plugin-apply time instead of inside a deferred `afterEvaluate` callback. The deferred version raced against AGP's own internal `afterEvaluate` (registered earlier, when `com.android.application`/`com.android.library` is applied) and lost, throwing "It is too late to add actions as the callbacks already executed" for any classic-mode project. Caught by rebuilding a real sample APK during this change, not by unit tests alone.
+- **Generated `KmpSplashInitProvider` no longer breaks consumers using `explicitApi()`.** The generated Android `SplashInit.kt` declared the provider with default (public) visibility, which explicit API mode rejects with a compile error. The class is now generated as `internal`, which both satisfies explicit API mode and removes the provider from the module's public Kotlin API — Android can still instantiate it from the manifest because `internal` classes remain public in JVM bytecode. The sample's `shared` module now enables `explicitApi()` as a regression guard.
 
 ---
 
