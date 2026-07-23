@@ -1,5 +1,6 @@
 package io.kmpbits.splash.tasks
 
+import io.kmpbits.splash.AppIconGenerator
 import io.kmpbits.splash.ExitAnimation
 import io.kmpbits.splash.toKotlinExpression
 import org.gradle.api.DefaultTask
@@ -13,6 +14,9 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import java.awt.Color
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
 
 /**
  * Task that generates iOS-specific splash screen resources.
@@ -23,6 +27,8 @@ import org.gradle.api.tasks.TaskAction
  * 3. Patches `Info.plist` to use `UILaunchScreen` with the generated assets.
  * 4. Patches `project.pbxproj` to ensure `Assets.xcassets` is included in the build.
  * 5. Generates `SplashInit.kt` for Compose-side configuration.
+ * 6. When [generateAppIcon] is true, generates a 1024x1024 `AppIcon.appiconset` from the same
+ *    `logo`/`backgroundColor` inputs, overwriting the empty placeholder step 1 always creates.
  */
 abstract class GenerateLaunchScreenTask : DefaultTask() {
 
@@ -60,6 +66,11 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:Optional
     abstract val exitAnimation: Property<ExitAnimation>
 
+    /** Whether to also generate a 1024x1024 `AppIcon.appiconset` from `logo`/`backgroundColor`. */
+    @get:Input
+    @get:Optional
+    abstract val generateAppIcon: Property<Boolean>
+
 
     /** Resolved file handle — @Internal so Gradle skips its own (unfriendly) validation. */
     @get:Internal
@@ -81,6 +92,8 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:OutputFile
     abstract val pbxprojFile: RegularFileProperty
 
+    private val supportedIconExtensions = setOf("png", "jpg", "jpeg", "gif", "bmp")
+
     @TaskAction
     fun generate() {
         if (!backgroundColor.isPresent) {
@@ -95,6 +108,9 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
         val resolvedLogoName = copyLogoAssets()
 
         generateColorAsset(resolvedColor)
+        if (generateAppIcon.getOrElse(false)) {
+            generateAppIconAsset(resolvedColor)
+        }
         patchInfoPlist(xcassetsDir.asFile.get().parentFile.resolve("Info.plist"), resolvedLogoName)
         patchProjectPbxproj()
         generateSplashConfig(resolvedColor, resolvedLogoName)
@@ -180,13 +196,78 @@ $lightColorJson$darkColorJson
   ],
   "info": { "author": "xcode", "version": 1 }
 }""".trimIndent())
-        
+
         val appiconset = xcassets.resolve("AppIcon.appiconset")
         if (!appiconset.exists()) {
             appiconset.mkdirs()
             appiconset.resolve("Contents.json").writeText("""{"images":[],"info":{"author":"xcode","version":1}}""")
         }
         logger.lifecycle("KmpSplash: wrote SplashBackground color asset")
+    }
+
+    /**
+     * Generates the iOS "single size" app icon: one fully-opaque 1024x1024 PNG, reusing
+     * [AppIconGenerator.renderLegacy] (the same trim -> scale -> composite-over-background logic
+     * as Android's legacy icon fallback). Xcode 14+ (already this plugin's floor, for
+     * UILaunchScreen) derives every other required size from this one image at build time.
+     *
+     * Always overwrites any existing `AppIcon.appiconset` content once [generateAppIcon] is true,
+     * the same deterministic-overwrite behavior as Android's `android:icon` manifest patching.
+     */
+    private fun generateAppIconAsset(hexColor: String) {
+        val logoFile = logoSourceFile.orNull?.asFile
+            ?: throw GradleException(
+                "KmpSplash: 'generateAppIcon' is enabled but no 'logo' is set in splashScreen { ... }. " +
+                "An app icon requires a logo to derive its foreground from."
+            )
+
+        val extension = logoFile.extension.lowercase()
+        if (extension !in supportedIconExtensions) {
+            throw GradleException(
+                "KmpSplash: 'generateAppIcon' requires logo '${logoFile.name}' to be one of " +
+                "${supportedIconExtensions.joinToString(", ")}. Vector formats (.svg, Android .xml) " +
+                "and WebP can't be rasterized for app icon generation."
+            )
+        }
+
+        val logo = ImageIO.read(logoFile)
+            ?: throw GradleException("KmpSplash: could not decode logo file '${logoFile.absolutePath}' as an image.")
+
+        val clean = hexColor.trimStart('#')
+        val background = Color(
+            clean.substring(0, 2).toInt(16),
+            clean.substring(2, 4).toInt(16),
+            clean.substring(4, 6).toInt(16),
+        )
+
+        checkIconUpscaling(logo)
+
+        val rendered = AppIconGenerator.renderLegacy(logo, background, canvasPx = 1024, round = false)
+        // Apple rejects a submitted icon that carries an alpha channel, even fully opaque —
+        // flatten into a channel-free RGB image before writing.
+        val opaque = BufferedImage(1024, 1024, BufferedImage.TYPE_INT_RGB)
+        val g = opaque.createGraphics()
+        g.drawImage(rendered, 0, 0, null)
+        g.dispose()
+
+        val appiconset = xcassetsDir.asFile.get().resolve("AppIcon.appiconset").also { it.mkdirs() }
+        ImageIO.write(opaque, "png", appiconset.resolve("ic_kmp_app_icon.png"))
+        appiconset.resolve("Contents.json").writeText(
+            """{"images":[{"filename":"ic_kmp_app_icon.png","idiom":"universal","platform":"ios","size":"1024x1024"}],"info":{"author":"xcode","version":1}}"""
+        )
+        logger.lifecycle("KmpSplash: wrote iOS app icon to ${appiconset.absolutePath}")
+    }
+
+    private fun checkIconUpscaling(logo: BufferedImage) {
+        val trimmed = AppIconGenerator.trimTransparentBorder(logo)
+        val smallerDimension = minOf(trimmed.width, trimmed.height)
+        val targetContentPx = (1024 * AppIconGenerator.LEGACY_CONTENT_SCALE).toInt()
+        if (AppIconGenerator.needsUpscalingWarning(smallerDimension, targetContentPx)) {
+            logger.warn(
+                "KmpSplash: logo's trimmed content is ${trimmed.width}x${trimmed.height}px, smaller than " +
+                "ideal for the iOS app icon and will be upscaled. Consider a higher-resolution logo."
+            )
+        }
     }
 
     private fun generateSplashConfig(hexColor: String, logoName: String?) {
