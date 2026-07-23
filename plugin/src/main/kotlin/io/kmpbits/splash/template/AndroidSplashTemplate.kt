@@ -54,13 +54,35 @@ $logoItem
     }
 
     /**
+     * Generates `mipmap-anydpi-v26/ic_kmp_app_icon.xml` (also reused verbatim for the round
+     * variant — launchers apply their own mask). References the background color and foreground
+     * drawable the app icon generation task writes alongside it.
+     */
+    fun generateAdaptiveIconXml(): String = """<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/kmp_app_icon_background"/>
+    <foreground android:drawable="@mipmap/ic_kmp_app_icon_foreground"/>
+</adaptive-icon>"""
+
+    /** Generates `values/kmp_app_icon.xml`, holding the adaptive icon's background color. */
+    fun generateAppIconColor(backgroundColor: String): String = """<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="kmp_app_icon_background">$backgroundColor</color>
+</resources>"""
+
+    /**
      * Generates a manifest by patching the [baseContent] or creating a new one.
      * It ensures the `<application>` tag has the correct splash theme and registers
      * [KmpSplashInitProvider] so [SplashDefaults] is initialized before any Activity runs.
+     * When [iconEnabled] is true, also sets `android:icon`/`android:roundIcon` to the generated
+     * app icon, deterministically overwriting any existing value the same way the theme is.
      */
-    fun generateManifest(baseContent: String?): String {
+    fun generateManifest(baseContent: String?, iconEnabled: Boolean = false): String {
         val splashTheme = "@style/Theme.App.SplashScreen"
         val themeAttr = "android:theme=\"$splashTheme\""
+        val iconAttr = if (iconEnabled) {
+            " android:icon=\"@mipmap/ic_kmp_app_icon\" android:roundIcon=\"@mipmap/ic_kmp_app_icon_round\""
+        } else ""
         val providerEntry = """        <provider
             android:name="io.kmpbits.splash.KmpSplashInitProvider"
             android:authorities="${'$'}{applicationId}.kmp_splash_init"
@@ -69,24 +91,40 @@ $logoItem
         if (baseContent == null) {
             return """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application $themeAttr>
+    <application $themeAttr$iconAttr>
 $providerEntry
     </application>
 </manifest>"""
         }
 
-        // Patch theme attribute on <application> tag
+        // Patch theme (and, when enabled, icon) attributes on <application> tag
         val applicationTagRegex = """<application(\s+[^>]*?)(/?)>""".toRegex(RegexOption.DOT_MATCHES_ALL)
         var result = applicationTagRegex.replace(baseContent) { match ->
             val attrs = match.groups[1]?.value ?: ""
             val selfClosing = match.groups[2]?.value ?: ""
             val themeRegex = """android:theme="[^"]*"""".toRegex()
 
-            val newAttrs = if (themeRegex.containsMatchIn(attrs)) {
+            var newAttrs = if (themeRegex.containsMatchIn(attrs)) {
                 themeRegex.replace(attrs, themeAttr)
             } else {
                 " $themeAttr$attrs"
             }
+
+            if (iconEnabled) {
+                val iconRegex = """\s*android:icon="[^"]*"""".toRegex()
+                val roundIconRegex = """\s*android:roundIcon="[^"]*"""".toRegex()
+                newAttrs = if (iconRegex.containsMatchIn(newAttrs)) {
+                    iconRegex.replace(newAttrs, " android:icon=\"@mipmap/ic_kmp_app_icon\"")
+                } else {
+                    "$newAttrs android:icon=\"@mipmap/ic_kmp_app_icon\""
+                }
+                newAttrs = if (roundIconRegex.containsMatchIn(newAttrs)) {
+                    roundIconRegex.replace(newAttrs, " android:roundIcon=\"@mipmap/ic_kmp_app_icon_round\"")
+                } else {
+                    "$newAttrs android:roundIcon=\"@mipmap/ic_kmp_app_icon_round\""
+                }
+            }
+
             "<application$newAttrs$selfClosing>"
         }
 
