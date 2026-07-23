@@ -3,7 +3,10 @@ package io.kmpbits.splash.tasks
 import io.kmpbits.splash.template.AndroidSplashTemplate
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -15,7 +18,8 @@ import org.gradle.api.tasks.TaskAction
  * `KmpSplashInitProvider` `<provider>` entry, via [AndroidSplashTemplate.generateManifest].
  * Because this runs on the already-merged manifest (not a pre-merge library manifest), it
  * deterministically overwrites any existing `android:theme` on `<application>` instead of risking
- * an AGP manifest-merge conflict.
+ * an AGP manifest-merge conflict. When [iconEnabled] is true, `android:icon`/`android:roundIcon`
+ * are patched the same deterministic way.
  */
 abstract class PatchSplashManifestTask : DefaultTask() {
 
@@ -25,9 +29,16 @@ abstract class PatchSplashManifestTask : DefaultTask() {
     @get:OutputFile
     abstract val updatedManifest: RegularFileProperty
 
+    @get:Input
+    @get:Optional
+    abstract val iconEnabled: Property<Boolean>
+
     @TaskAction
     fun patch() {
-        val patched = AndroidSplashTemplate.generateManifest(mergedManifest.asFile.get().readText())
+        val patched = AndroidSplashTemplate.generateManifest(
+            mergedManifest.asFile.get().readText(),
+            iconEnabled.getOrElse(false),
+        )
         val outputFile = updatedManifest.asFile.get()
         outputFile.parentFile?.mkdirs()
         outputFile.writeText(patched)

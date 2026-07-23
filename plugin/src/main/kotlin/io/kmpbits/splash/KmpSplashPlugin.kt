@@ -5,6 +5,7 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.Variant
 import io.kmpbits.splash.tasks.GenerateAndroidSplashTask
+import io.kmpbits.splash.tasks.GenerateAppIconTask
 import io.kmpbits.splash.tasks.GenerateLaunchScreenTask
 import io.kmpbits.splash.tasks.PatchSplashManifestTask
 import org.gradle.api.Action
@@ -27,6 +28,7 @@ class KmpSplashPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val ext = project.extensions.create("splashScreen", KmpSplashExtension::class.java)
         ext.iosProjectPath.convention("iosApp/iosApp")
+        ext.generateAppIcon.convention(false)
         registerIosTask(project, ext)
         registerAndroidTask(project, ext)
     }
@@ -165,6 +167,7 @@ class KmpSplashPlugin : Plugin<Project> {
     private fun registerAndroidTask(project: Project, ext: KmpSplashExtension) {
         val generatedResDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/res")
         val generatedKotlinDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/kotlin")
+        val generatedAppIconResDir = project.layout.buildDirectory.dir("generated/kmpSplash/androidMain/resAppIcon")
 
         val task = project.tasks.register(
             "generateAndroidSplash",
@@ -199,6 +202,22 @@ class KmpSplashPlugin : Plugin<Project> {
             }
         )
 
+        val appIconTask = project.tasks.register(
+            "generateAppIcon",
+            GenerateAppIconTask::class.java,
+            Action<GenerateAppIconTask> {
+                group = "kmp-splash"
+                description = "Generates the Android adaptive app icon and legacy fallbacks"
+
+                enabled.set(ext.generateAppIcon)
+                backgroundColor.set(ext.backgroundColor.map { it.hex })
+                logoSourceFile.set(
+                    project.layout.file(ext.logo.map { logo -> project.file(logo.resolvedPath()) })
+                )
+                resOutputDir.set(generatedAppIconResDir)
+            }
+        )
+
         // Classic-mode Variant API wiring is registered eagerly here (NOT inside the
         // project.afterEvaluate block below). AGP's own internal variant-finalization also runs
         // via a project.afterEvaluate callback, registered when com.android.application or
@@ -217,7 +236,7 @@ class KmpSplashPlugin : Plugin<Project> {
             val components = project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
             components.onVariants { variant ->
                 if (!ext.androidAppPath.isPresent) {
-                    wireVariantResourcesAndManifest(project, variant, task)
+                    wireVariantResourcesAndManifest(project, variant, task, appIconTask, ext.generateAppIcon)
                 }
             }
         }
@@ -225,7 +244,7 @@ class KmpSplashPlugin : Plugin<Project> {
             val components = project.extensions.getByType(LibraryAndroidComponentsExtension::class.java)
             components.onVariants { variant ->
                 if (!ext.androidAppPath.isPresent) {
-                    wireVariantResourcesAndManifest(project, variant, task)
+                    wireVariantResourcesAndManifest(project, variant, task, appIconTask, ext.generateAppIcon)
                 }
             }
         }
@@ -279,7 +298,7 @@ class KmpSplashPlugin : Plugin<Project> {
                             ApplicationAndroidComponentsExtension::class.java
                         )
                         components.onVariants { variant ->
-                            wireVariantResourcesAndManifest(androidProject, variant, task)
+                            wireVariantResourcesAndManifest(androidProject, variant, task, appIconTask, ext.generateAppIcon)
                         }
                     }
                 }
@@ -308,7 +327,9 @@ class KmpSplashPlugin : Plugin<Project> {
 private fun wireVariantResourcesAndManifest(
     androidProject: Project,
     variant: Variant,
-    task: TaskProvider<GenerateAndroidSplashTask>,
+    splashTask: TaskProvider<GenerateAndroidSplashTask>,
+    appIconTask: TaskProvider<GenerateAppIconTask>,
+    generateAppIconEnabled: Provider<Boolean>,
 ) {
     val res = variant.sources.res
     if (res == null) {
@@ -318,8 +339,12 @@ private fun wireVariantResourcesAndManifest(
         )
     } else {
         res.addGeneratedSourceDirectory(
-            task,
+            splashTask,
             GenerateAndroidSplashTask::resOutputDir,
+        )
+        res.addGeneratedSourceDirectory(
+            appIconTask,
+            GenerateAppIconTask::resOutputDir,
         )
     }
 
@@ -329,6 +354,7 @@ private fun wireVariantResourcesAndManifest(
     ) {
         group = "kmp-splash"
         description = "Patches the manifest with the splash theme and provider (${variant.name})"
+        iconEnabled.set(generateAppIconEnabled)
     }
     variant.artifacts.use(patchManifest)
         .wiredWithFiles(

@@ -28,6 +28,25 @@ class KmpSplashPluginTest {
     }
 
     @Test
+    fun `plugin registers generateAppIcon task`() {
+        val project = ProjectBuilder.builder().build()
+        project.plugins.apply("org.jetbrains.kotlin.multiplatform")
+        project.plugins.apply("io.github.kmpbits.splash")
+
+        assertNotNull(project.tasks.findByName("generateAppIcon"))
+    }
+
+    @Test
+    fun `generateAppIcon defaults to false`() {
+        val project = ProjectBuilder.builder().build()
+        project.plugins.apply("org.jetbrains.kotlin.multiplatform")
+        project.plugins.apply("io.github.kmpbits.splash")
+
+        val ext = project.extensions.getByType(KmpSplashExtension::class.java)
+        assertEquals(false, ext.generateAppIcon.get())
+    }
+
+    @Test
     fun `ExitAnimation None toKotlinExpression returns null`() {
         kotlin.test.assertNull(ExitAnimation.None.toKotlinExpression())
     }
