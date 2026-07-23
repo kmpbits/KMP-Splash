@@ -26,6 +26,9 @@ import javax.imageio.ImageIO
  */
 abstract class GenerateAppIconTask : DefaultTask() {
 
+    // Concrete, not abstract — an `abstract val enabled: Property<Boolean>` collides with
+    // org.gradle.api.Task's own inherited `boolean` "enabled" bean property (isEnabled()/
+    // setEnabled()) at Gradle's class-decoration layer, causing a ClassGenerationException.
     @get:Input
     val enabled: Property<Boolean> = project.objects.property(Boolean::class.java)
 
@@ -65,6 +68,14 @@ abstract class GenerateAppIconTask : DefaultTask() {
             ?: throw org.gradle.api.GradleException(
                 "KmpSplash: could not decode logo file '${logoFile.absolutePath}' as an image."
             )
+
+        if (!backgroundColor.isPresent) {
+            throw org.gradle.api.GradleException(
+                "KmpSplash: 'generateAppIcon' is enabled but no 'backgroundColor' is set in " +
+                "splashScreen { ... }. An app icon requires a background color for its legacy " +
+                "and adaptive-icon variants."
+            )
+        }
 
         val hexColor = backgroundColor.get().trimStart('#')
         val background = Color(

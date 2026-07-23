@@ -90,6 +90,24 @@ class GenerateAppIconTaskTest {
     }
 
     @Test
+    fun `fails with an actionable message when enabled but no backgroundColor is set`() {
+        val project = ProjectBuilder.builder().build()
+        val task = project.tasks.create("generateAppIconTest", GenerateAppIconTask::class.java)
+
+        val logoFile = File(project.projectDir, "logo.png").also { writeTestLogo(it) }
+
+        task.enabled.set(true)
+        task.logoSourceFile.set(logoFile)
+        task.resOutputDir.set(File(project.projectDir, "generated/res"))
+
+        val error = assertFailsWith<GradleException> { task.generate() }
+        assertTrue(
+            error.message!!.contains("no 'backgroundColor' is set"),
+            "expected an actionable message, got: ${error.message}"
+        )
+    }
+
+    @Test
     fun `fails with an actionable message for an unsupported logo format`() {
         val project = ProjectBuilder.builder().build()
         val task = project.tasks.create("generateAppIconTest", GenerateAppIconTask::class.java)
