@@ -7,6 +7,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+private fun BufferedImage.argbAt(x: Int, y: Int): Int = getRGB(x, y)
+private fun Int.alpha(): Int = (this ushr 24) and 0xFF
+private fun Int.red(): Int = (this ushr 16) and 0xFF
+
 class AppIconGeneratorTest {
 
     private fun paddedTestLogo(): BufferedImage {
@@ -48,5 +52,32 @@ class AppIconGeneratorTest {
     @Test
     fun `needsUpscalingWarning is false for content at or above the largest foreground target`() {
         assertFalse(AppIconGenerator.needsUpscalingWarning(300))
+    }
+
+    @Test
+    fun `renderForeground centers the trimmed logo on a transparent canvas`() {
+        val foreground = AppIconGenerator.renderForeground(paddedTestLogo(), canvasPx = 100)
+
+        assertEquals(0, foreground.argbAt(0, 0).alpha(), "expected the canvas corner to stay transparent")
+        assertTrue(foreground.argbAt(50, 50).alpha() > 0, "expected the canvas center to be drawn")
+        assertTrue(foreground.argbAt(50, 50).red() > 150, "expected the drawn logo's red channel to dominate")
+    }
+
+    @Test
+    fun `renderLegacy composites the trimmed logo over an opaque background`() {
+        val legacy = AppIconGenerator.renderLegacy(paddedTestLogo(), Color.WHITE, canvasPx = 100, round = false)
+
+        val corner = legacy.argbAt(0, 0)
+        assertEquals(255, corner.alpha(), "expected the corner to be filled with the opaque background")
+        assertEquals(255, corner.red(), "expected the corner to be the white background color")
+        assertTrue(legacy.argbAt(50, 50).red() > 150, "expected the drawn logo's red channel to dominate at the center")
+    }
+
+    @Test
+    fun `renderLegacy with round clips corners to transparent`() {
+        val legacy = AppIconGenerator.renderLegacy(paddedTestLogo(), Color.WHITE, canvasPx = 100, round = true)
+
+        assertEquals(0, legacy.argbAt(0, 0).alpha(), "expected the corner to be clipped outside the circle")
+        assertTrue(legacy.argbAt(50, 50).alpha() > 0, "expected the center to remain inside the circle")
     }
 }

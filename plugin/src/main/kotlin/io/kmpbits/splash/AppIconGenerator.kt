@@ -1,6 +1,10 @@
 package io.kmpbits.splash
 
+import java.awt.Color
+import java.awt.Graphics2D
 import java.awt.Rectangle
+import java.awt.RenderingHints
+import java.awt.geom.Ellipse2D
 import java.awt.image.BufferedImage
 
 /**
@@ -67,5 +71,67 @@ internal object AppIconGenerator {
         val largestCanvas = FOREGROUND_DENSITIES.values.max()
         val targetContentPx = (largestCanvas * FOREGROUND_CONTENT_SCALE).toInt()
         return trimmedContentPx < targetContentPx
+    }
+
+    /**
+     * Renders the adaptive-icon foreground layer: the trimmed [logo] scaled to
+     * [FOREGROUND_CONTENT_SCALE] of a transparent [canvasPx] x [canvasPx] canvas, centered.
+     */
+    fun renderForeground(logo: BufferedImage, canvasPx: Int): BufferedImage {
+        val canvas = BufferedImage(canvasPx, canvasPx, BufferedImage.TYPE_INT_ARGB)
+        val g = canvas.createGraphics()
+        configureQuality(g)
+        drawTrimmedAndScaled(g, logo, canvasPx, FOREGROUND_CONTENT_SCALE)
+        g.dispose()
+        return canvas
+    }
+
+    /**
+     * Renders a legacy launcher icon: an opaque [backgroundColor] fill (clipped to a circle when
+     * [round] is true) with the trimmed [logo] scaled to [LEGACY_CONTENT_SCALE] on top.
+     */
+    fun renderLegacy(
+        logo: BufferedImage,
+        backgroundColor: Color,
+        canvasPx: Int,
+        round: Boolean,
+    ): BufferedImage {
+        val canvas = BufferedImage(canvasPx, canvasPx, BufferedImage.TYPE_INT_ARGB)
+        val g = canvas.createGraphics()
+        configureQuality(g)
+
+        if (round) {
+            g.clip = Ellipse2D.Float(0f, 0f, canvasPx.toFloat(), canvasPx.toFloat())
+        }
+
+        g.color = backgroundColor
+        g.fillRect(0, 0, canvasPx, canvasPx)
+        drawTrimmedAndScaled(g, logo, canvasPx, LEGACY_CONTENT_SCALE)
+        g.dispose()
+        return canvas
+    }
+
+    private fun configureQuality(g: Graphics2D) {
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+    }
+
+    /** Draws [logo], trimmed and scaled to [contentScale] of [canvasPx], centered, onto [g]. */
+    private fun drawTrimmedAndScaled(g: Graphics2D, logo: BufferedImage, canvasPx: Int, contentScale: Double) {
+        val trimmed = trimTransparentBorder(logo)
+        val targetSize = canvasPx * contentScale
+        val scale = minOf(targetSize / trimmed.width, targetSize / trimmed.height)
+        val drawWidth = (trimmed.width * scale).toInt().coerceAtLeast(1)
+        val drawHeight = (trimmed.height * scale).toInt().coerceAtLeast(1)
+        val destX = (canvasPx - drawWidth) / 2
+        val destY = (canvasPx - drawHeight) / 2
+
+        g.drawImage(
+            logo,
+            destX, destY, destX + drawWidth, destY + drawHeight,
+            trimmed.x, trimmed.y, trimmed.x + trimmed.width, trimmed.y + trimmed.height,
+            null,
+        )
     }
 }
