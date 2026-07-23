@@ -113,4 +113,26 @@ abstract class KmpSplashExtension {
     @get:Input
     @get:Optional
     abstract val resourcePackage: Property<String>
+
+    /**
+     * Whether to generate an Android adaptive app icon (and legacy square/round PNG fallbacks)
+     * from [logo] and [backgroundColor].
+     *
+     * Off by default — changing the app's launcher icon is a visible, home-screen-facing change,
+     * so it's opt-in rather than automatic whenever [logo] is set.
+     *
+     * Requires [logo] to be set, in a rasterizable format (PNG, JPEG, GIF, or BMP — not WebP,
+     * `.svg`, or Android vector `.xml`).
+     *
+     * Example:
+     * ```kotlin
+     * splashScreen {
+     *     backgroundColor = SplashColor.white
+     *     logo = SplashLogo.resource("logo.png")
+     *     generateAppIcon = true
+     * }
+     * ```
+     */
+    @get:Input
+    abstract val generateAppIcon: Property<Boolean>
 }
