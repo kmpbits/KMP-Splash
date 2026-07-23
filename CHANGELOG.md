@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **`generateAppIcon` option to generate an Android adaptive app icon.** Set `splashScreen { generateAppIcon = true }` to derive a launcher icon from your existing `logo` and `backgroundColor` — no separate icon assets needed. Generates the adaptive icon (`mipmap-anydpi-v26`, background color + a trimmed, re-centered foreground layer), legacy square/round PNG fallbacks at all five mipmap densities for pre-Android-13 devices, and patches `android:icon`/`android:roundIcon` into the manifest. Off by default.
+
 ## 1.3.0
 
 ### Changed
