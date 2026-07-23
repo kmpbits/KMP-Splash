@@ -14,7 +14,6 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import java.awt.Color
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
@@ -91,8 +90,6 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
 
     @get:OutputFile
     abstract val pbxprojFile: RegularFileProperty
-
-    private val supportedIconExtensions = setOf("png", "jpg", "jpeg", "gif", "bmp")
 
     @TaskAction
     fun generate() {
@@ -222,10 +219,10 @@ $lightColorJson$darkColorJson
             )
 
         val extension = logoFile.extension.lowercase()
-        if (extension !in supportedIconExtensions) {
+        if (extension !in AppIconGenerator.SUPPORTED_LOGO_EXTENSIONS) {
             throw GradleException(
                 "KmpSplash: 'generateAppIcon' requires logo '${logoFile.name}' to be one of " +
-                "${supportedIconExtensions.joinToString(", ")}. Vector formats (.svg, Android .xml) " +
+                "${AppIconGenerator.SUPPORTED_LOGO_EXTENSIONS.joinToString(", ")}. Vector formats (.svg, Android .xml) " +
                 "and WebP can't be rasterized for app icon generation."
             )
         }
@@ -233,12 +230,7 @@ $lightColorJson$darkColorJson
         val logo = ImageIO.read(logoFile)
             ?: throw GradleException("KmpSplash: could not decode logo file '${logoFile.absolutePath}' as an image.")
 
-        val clean = hexColor.trimStart('#')
-        val background = Color(
-            clean.substring(0, 2).toInt(16),
-            clean.substring(2, 4).toInt(16),
-            clean.substring(4, 6).toInt(16),
-        )
+        val background = AppIconGenerator.parseHexColor(hexColor)
 
         checkIconUpscaling(logo)
 

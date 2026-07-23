@@ -23,6 +23,19 @@ internal object AppIconGenerator {
     /** Alpha values at or below this (0-255) are treated as transparent when trimming. */
     private const val ALPHA_TRIM_THRESHOLD = 10
 
+    /** Rasterizable logo file extensions (no dot), accepted for app icon generation on both platforms. */
+    val SUPPORTED_LOGO_EXTENSIONS: Set<String> = setOf("png", "jpg", "jpeg", "gif", "bmp")
+
+    /** Parses a "#RRGGBB" (or "RRGGBB") hex string into an opaque [Color]. */
+    fun parseHexColor(hex: String): Color {
+        val clean = hex.trimStart('#')
+        return Color(
+            clean.substring(0, 2).toInt(16),
+            clean.substring(2, 4).toInt(16),
+            clean.substring(4, 6).toInt(16),
+        )
+    }
+
     /** Legacy (pre-adaptive-icon) launcher icon size in px, keyed by density qualifier. */
     val LEGACY_DENSITIES: Map<String, Int> = mapOf(
         "mdpi" to 48, "hdpi" to 72, "xhdpi" to 96, "xxhdpi" to 144, "xxxhdpi" to 192,

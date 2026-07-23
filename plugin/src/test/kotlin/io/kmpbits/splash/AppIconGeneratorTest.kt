@@ -90,4 +90,18 @@ class AppIconGeneratorTest {
     fun `needsUpscalingWarning with an explicit target is false when content meets the target`() {
         assertFalse(AppIconGenerator.needsUpscalingWarning(737, targetContentPx = 737))
     }
+
+    @Test
+    fun `parseHexColor parses a hash-prefixed hex string`() {
+        val color = AppIconGenerator.parseHexColor("#FF0000")
+
+        assertEquals(Color(255, 0, 0), color)
+    }
+
+    @Test
+    fun `parseHexColor accepts a hex string without a hash prefix`() {
+        val color = AppIconGenerator.parseHexColor("00FF00")
+
+        assertEquals(Color(0, 255, 0), color)
+    }
 }
