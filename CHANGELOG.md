@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Added
-- **`generateAppIcon` option to generate an Android adaptive app icon.** Set `splashScreen { generateAppIcon = true }` to derive a launcher icon from your existing `logo` and `backgroundColor` — no separate icon assets needed. Generates the adaptive icon (`mipmap-anydpi-v26`, background color + a trimmed, re-centered foreground layer), legacy square/round PNG fallbacks at all five mipmap densities for pre-Android-13 devices, and patches `android:icon`/`android:roundIcon` into the manifest. Off by default.
+- **`generateAppIcon` option to generate the app icon on Android and iOS.** Set `splashScreen { generateAppIcon = true }` to derive a launcher/home-screen icon from your existing `logo` and `backgroundColor` — no separate icon assets needed. On Android, generates the adaptive icon (`mipmap-anydpi-v26`, background color + a trimmed, re-centered foreground layer), legacy square/round PNG fallbacks at all five mipmap densities for pre-Android-13 devices, and patches `android:icon`/`android:roundIcon` into the manifest. On iOS, generates a single 1024×1024 `AppIcon.appiconset` image (Xcode 14+ derives every other required size automatically), composited from `logo` over `backgroundColor`. Off by default on both platforms.
 
 ## 1.3.0
 
