@@ -47,6 +47,18 @@ class KmpSplashPluginTest {
     }
 
     @Test
+    fun `generateAppIcon flag is wired into the generateLaunchScreen task`() {
+        val project = ProjectBuilder.builder().build()
+        project.plugins.apply("org.jetbrains.kotlin.multiplatform")
+        project.plugins.apply("io.github.kmpbits.splash")
+
+        val ext = project.extensions.getByType(KmpSplashExtension::class.java)
+        ext.generateAppIcon.set(true)
+
+        assertEquals(true, project.generateLaunchScreenTask().generateAppIcon.get())
+    }
+
+    @Test
     fun `ExitAnimation None toKotlinExpression returns null`() {
         kotlin.test.assertNull(ExitAnimation.None.toKotlinExpression())
     }

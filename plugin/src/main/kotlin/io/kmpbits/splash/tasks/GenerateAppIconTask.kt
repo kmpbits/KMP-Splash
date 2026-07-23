@@ -11,7 +11,6 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import java.awt.Color
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
@@ -43,8 +42,6 @@ abstract class GenerateAppIconTask : DefaultTask() {
     @get:OutputDirectory
     abstract val resOutputDir: DirectoryProperty
 
-    private val supportedExtensions = setOf("png", "jpg", "jpeg", "gif", "bmp")
-
     @TaskAction
     fun generate() {
         if (!enabled.getOrElse(false)) return
@@ -56,10 +53,10 @@ abstract class GenerateAppIconTask : DefaultTask() {
             )
 
         val extension = logoFile.extension.lowercase()
-        if (extension !in supportedExtensions) {
+        if (extension !in AppIconGenerator.SUPPORTED_LOGO_EXTENSIONS) {
             throw org.gradle.api.GradleException(
                 "KmpSplash: 'generateAppIcon' requires logo '${logoFile.name}' to be one of " +
-                "${supportedExtensions.joinToString(", ")}. Vector formats (.svg, Android .xml) " +
+                "${AppIconGenerator.SUPPORTED_LOGO_EXTENSIONS.joinToString(", ")}. Vector formats (.svg, Android .xml) " +
                 "and WebP can't be rasterized for app icon generation."
             )
         }
@@ -77,12 +74,7 @@ abstract class GenerateAppIconTask : DefaultTask() {
             )
         }
 
-        val hexColor = backgroundColor.get().trimStart('#')
-        val background = Color(
-            hexColor.substring(0, 2).toInt(16),
-            hexColor.substring(2, 4).toInt(16),
-            hexColor.substring(4, 6).toInt(16),
-        )
+        val background = AppIconGenerator.parseHexColor(backgroundColor.get())
 
         checkUpscaling(logo)
 

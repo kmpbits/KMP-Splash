@@ -92,6 +92,7 @@ class KmpSplashPlugin : Plugin<Project> {
                 )
                 resourcePackage.set(composeResourcePackage(project, ext))
                 exitAnimation.set(ext.exitAnimation)
+                generateAppIcon.set(ext.generateAppIcon)
             }
         )
 

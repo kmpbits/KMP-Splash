@@ -92,7 +92,7 @@ splashScreen {
     iosProjectPath = "iosApp/iosApp"                   // Optional: defaults to "iosApp/iosApp"
     androidAppPath = "androidApp"                      // Required if using the new KMP module structure
     resourcePackage = "com.example.myapp.generated.resources"  // Optional: override the inferred Compose resource package
-    generateAppIcon = true                             // Optional: generate an Android adaptive app icon from logo + backgroundColor
+    generateAppIcon = true                             // Optional: generate the app icon (Android + iOS) from logo + backgroundColor
 }
 ```
 
@@ -140,9 +140,9 @@ splashScreen {
 }
 ```
 
-#### Android app icon
+#### App icon (Android + iOS)
 
-Set `generateAppIcon = true` to also generate the Android launcher icon from your existing `logo` and `backgroundColor` — no separate icon assets required:
+Set `generateAppIcon = true` to also generate the app icon on both platforms from your existing `logo` and `backgroundColor` — no separate icon assets required:
 
 ```kotlin
 splashScreen {
@@ -154,11 +154,10 @@ splashScreen {
 
 This requires `logo` to be set, in a rasterizable format (PNG, JPEG, GIF, or BMP — not WebP, `.svg`, or Android vector `.xml`). The plugin generates:
 
-- An adaptive icon (`mipmap-anydpi-v26`) with `backgroundColor` as the background layer and a trimmed, re-centered copy of `logo` as the foreground
-- Legacy square and round PNG fallbacks at all five mipmap densities, for devices below Android 13 (API 26)
-- `android:icon`/`android:roundIcon` in the manifest, pointing at the generated icon
+- **Android:** an adaptive icon (`mipmap-anydpi-v26`) with `backgroundColor` as the background layer and a trimmed, re-centered copy of `logo` as the foreground, legacy square/round PNG fallbacks at all five mipmap densities for devices below Android 13 (API 26), and `android:icon`/`android:roundIcon` in the manifest pointing at the generated icon.
+- **iOS:** a single 1024×1024 `AppIcon.appiconset` image (Xcode 14+ derives every other required size from it automatically), composited from `logo` over `backgroundColor` the same way as Android's legacy fallback icon.
 
-Off by default — changing your app's launcher icon is a visible, home-screen-facing change, so it's opt-in rather than automatic whenever `logo` is set. `backgroundColorNight` and `logoDark` aren't used for the icon: launchers don't resolve dark-mode resource qualifiers for launcher icons.
+Off by default — changing your app's launcher icon is a visible, home-screen-facing change, so it's opt-in rather than automatic whenever `logo` is set. `backgroundColorNight` and `logoDark` aren't used for the icon on either platform: launchers/springboards don't resolve dark-mode resource qualifiers for app icons.
 
 #### ExitAnimation options
 
