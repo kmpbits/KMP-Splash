@@ -32,6 +32,7 @@ splashScreen {
     logo = SplashLogo.resource("logo.png")
     exitAnimation = ExitAnimation.SlideUp()
     androidAppPath = "sample/androidApp"
+    generateAppIcon = true
 }
 
 android {

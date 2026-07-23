@@ -50,6 +50,7 @@ splashScreen {
     iosProjectPath = "sample/iosApp/iosApp"
     logo = SplashLogo.resource("logo.png")
     exitAnimation = ExitAnimation.SlideUp()
+    generateAppIcon = true
 }
 
 android {
