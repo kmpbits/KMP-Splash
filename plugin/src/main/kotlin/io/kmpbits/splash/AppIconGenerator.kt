@@ -63,15 +63,23 @@ internal object AppIconGenerator {
     }
 
     /**
-     * True if [trimmedContentPx] (the smaller dimension of a trimmed logo's bounding box) is too
-     * small to fill [FOREGROUND_CONTENT_SCALE] of the largest generated foreground canvas without
-     * visible upscaling.
+     * Convenience overload for Android: true if [trimmedContentPx] is too small to fill
+     * [FOREGROUND_CONTENT_SCALE] of the largest generated foreground canvas without visible
+     * upscaling. Delegates to the general two-argument overload below.
      */
     fun needsUpscalingWarning(trimmedContentPx: Int): Boolean {
         val largestCanvas = FOREGROUND_DENSITIES.values.max()
         val targetContentPx = (largestCanvas * FOREGROUND_CONTENT_SCALE).toInt()
-        return trimmedContentPx < targetContentPx
+        return needsUpscalingWarning(trimmedContentPx, targetContentPx)
     }
+
+    /**
+     * True if [trimmedContentPx] (the smaller dimension of a trimmed logo's bounding box) is
+     * smaller than [targetContentPx] — the content size a specific icon format needs to fill
+     * without visible upscaling.
+     */
+    fun needsUpscalingWarning(trimmedContentPx: Int, targetContentPx: Int): Boolean =
+        trimmedContentPx < targetContentPx
 
     /**
      * Renders the adaptive-icon foreground layer: the trimmed [logo] scaled to

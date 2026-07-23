@@ -80,4 +80,14 @@ class AppIconGeneratorTest {
         assertEquals(0, legacy.argbAt(0, 0).alpha(), "expected the corner to be clipped outside the circle")
         assertTrue(legacy.argbAt(50, 50).alpha() > 0, "expected the center to remain inside the circle")
     }
+
+    @Test
+    fun `needsUpscalingWarning with an explicit target is true when content is smaller than the target`() {
+        assertTrue(AppIconGenerator.needsUpscalingWarning(500, targetContentPx = 737))
+    }
+
+    @Test
+    fun `needsUpscalingWarning with an explicit target is false when content meets the target`() {
+        assertFalse(AppIconGenerator.needsUpscalingWarning(737, targetContentPx = 737))
+    }
 }
