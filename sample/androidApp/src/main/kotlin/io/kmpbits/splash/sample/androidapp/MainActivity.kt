@@ -1,5 +1,6 @@
 package io.kmpbits.splash.sample.androidapp
 
+import android.annotation.SuppressLint
 import android.widget.TextView
 import io.kmpbits.splash.SplashActivity
 import kotlinx.coroutines.delay
@@ -11,6 +12,7 @@ class MainActivity : SplashActivity() {
         return true
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onFinished() {
         setContentView(TextView(this).apply { text = "KMP Splash — androidApp sample" })
     }
