@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1
+
+### Fixed
+- **`KmpSplashInitProvider`'s manifest authority is no longer a dead `${applicationId}` placeholder in application modules.** `PatchSplashManifestTask` patches AGP's `MERGED_MANIFEST` artifact, but for application variants AGP has already resolved `${applicationId}` placeholders by that stage (confirmed against sibling providers like androidx-startup's, already substituted at the same artifact). Writing the literal placeholder there meant it was never substituted, so every app using this plugin shipped the exact same authority string (`${applicationId}.kmp_splash_init`) — any two such apps installed on the same device collided with `INSTALL_FAILED_CONFLICTING_PROVIDER`. The plugin now resolves the real `applicationId` for application variants and injects it directly. Library variants are unaffected and still receive the literal placeholder, correctly resolved later when their manifest is merged into the consuming app.
+
 ## 1.4.0
 
 ### Added

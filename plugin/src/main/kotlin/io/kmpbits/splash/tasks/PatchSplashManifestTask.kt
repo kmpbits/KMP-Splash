@@ -33,11 +33,22 @@ abstract class PatchSplashManifestTask : DefaultTask() {
     @get:Optional
     abstract val iconEnabled: Property<Boolean>
 
+    /**
+     * The resolved applicationId, set only for application variants (see
+     * [io.kmpbits.splash.wireVariantResourcesAndManifest]). When absent (library variants), the
+     * provider authority keeps the literal `${applicationId}` placeholder for AGP to resolve on
+     * the later merge into the consuming app.
+     */
+    @get:Input
+    @get:Optional
+    abstract val applicationId: Property<String>
+
     @TaskAction
     fun patch() {
         val patched = AndroidSplashTemplate.generateManifest(
             mergedManifest.asFile.get().readText(),
             iconEnabled.getOrElse(false),
+            applicationId.orNull,
         )
         val outputFile = updatedManifest.asFile.get()
         outputFile.parentFile?.mkdirs()

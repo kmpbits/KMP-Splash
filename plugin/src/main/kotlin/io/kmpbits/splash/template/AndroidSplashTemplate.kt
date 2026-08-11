@@ -76,16 +76,28 @@ $logoItem
      * [KmpSplashInitProvider] so [SplashDefaults] is initialized before any Activity runs.
      * When [iconEnabled] is true, also sets `android:icon`/`android:roundIcon` to the generated
      * app icon, deterministically overwriting any existing value the same way the theme is.
+     *
+     * [applicationId], when provided, is the resolved application id to use for the provider's
+     * `android:authorities` instead of the literal `${applicationId}` placeholder. This must be
+     * passed for application variants: [baseContent] there is already past AGP's own placeholder
+     * substitution pass, so a literal placeholder would never get resolved. Leave it null for
+     * library variants, where the literal placeholder is correct — it's resolved later, when this
+     * manifest is merged into the consuming app.
      */
-    fun generateManifest(baseContent: String?, iconEnabled: Boolean = false): String {
+    fun generateManifest(
+        baseContent: String?,
+        iconEnabled: Boolean = false,
+        applicationId: String? = null,
+    ): String {
         val splashTheme = "@style/Theme.App.SplashScreen"
         val themeAttr = "android:theme=\"$splashTheme\""
         val iconAttr = if (iconEnabled) {
             " android:icon=\"@mipmap/ic_kmp_app_icon\" android:roundIcon=\"@mipmap/ic_kmp_app_icon_round\""
         } else ""
+        val authorityPrefix = applicationId ?: "${'$'}{applicationId}"
         val providerEntry = """        <provider
             android:name="io.kmpbits.splash.KmpSplashInitProvider"
-            android:authorities="${'$'}{applicationId}.kmp_splash_init"
+            android:authorities="$authorityPrefix.kmp_splash_init"
             android:exported="false" />"""
 
         if (baseContent == null) {

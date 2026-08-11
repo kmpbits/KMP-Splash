@@ -2,6 +2,7 @@ package io.kmpbits.splash
 
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.ApplicationVariant
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.Variant
 import io.kmpbits.splash.tasks.GenerateAndroidSplashTask
@@ -356,6 +357,15 @@ private fun wireVariantResourcesAndManifest(
         group = "kmp-splash"
         description = "Patches the manifest with the splash theme and provider (${variant.name})"
         iconEnabled.set(generateAppIconEnabled)
+        // Application variants: MERGED_MANIFEST is consumed *after* AGP has already run its own
+        // ${applicationId} placeholder substitution (verified against sibling providers like
+        // androidx-startup's, which are already resolved to the real applicationId at this same
+        // artifact stage). Writing the literal placeholder text here would never get substituted,
+        // so resolve it now and inject the real value instead.
+        // Library variants have no applicationId of their own — their manifest is merged again
+        // later into the consuming app, where AGP performs the substitution normally, so the
+        // literal placeholder must be left as-is for that later merge to resolve.
+        (variant as? ApplicationVariant)?.let { applicationId.set(it.applicationId) }
     }
     variant.artifacts.use(patchManifest)
         .wiredWithFiles(
