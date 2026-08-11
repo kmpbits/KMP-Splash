@@ -1,5 +1,9 @@
 package io.kmpbits.splash
 
+import io.kmpbits.splash.AppIconGenerator.ALPHA_TRIM_THRESHOLD
+import io.kmpbits.splash.AppIconGenerator.FOREGROUND_CONTENT_SCALE
+import io.kmpbits.splash.AppIconGenerator.LEGACY_CONTENT_SCALE
+import io.kmpbits.splash.AppIconGenerator.SPLASH_ICON_CONTENT_SCALE
 import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.Rectangle
@@ -19,6 +23,14 @@ internal object AppIconGenerator {
 
     /** Fraction of the legacy (no launcher mask) icon canvas the trimmed logo is scaled to fill. */
     const val LEGACY_CONTENT_SCALE = 0.72
+
+    /**
+     * Fraction of the splash icon canvas the trimmed logo is scaled to fill. Android's
+     * SplashScreen API (API 31+) masks `windowSplashScreenAnimatedIcon` into a circle and crops
+     * any artwork outside the inner ~2/3 "safe zone" — the same convention as adaptive launcher
+     * icons — so a logo drawn edge-to-edge gets clipped by the system unless padded first.
+     */
+    const val SPLASH_ICON_CONTENT_SCALE = 0.66
 
     /** Alpha values at or below this (0-255) are treated as transparent when trimming. */
     private const val ALPHA_TRIM_THRESHOLD = 10
@@ -128,6 +140,25 @@ internal object AppIconGenerator {
         g.color = backgroundColor
         g.fillRect(0, 0, canvasPx, canvasPx)
         drawTrimmedAndScaled(g, logo, canvasPx, LEGACY_CONTENT_SCALE)
+        g.dispose()
+        return canvas
+    }
+
+    /**
+     * Renders the splash screen icon: the trimmed [logo] scaled to [SPLASH_ICON_CONTENT_SCALE] of
+     * a transparent square canvas sized off the trimmed content itself (no forced up/downscale),
+     * centered. Pads a logo that would otherwise be drawn edge-to-edge so the system's icon mask
+     * doesn't crop it.
+     */
+    fun renderSplashIcon(logo: BufferedImage): BufferedImage {
+        val trimmed = trimTransparentBorder(logo)
+        val canvasPx = (maxOf(trimmed.width, trimmed.height) / SPLASH_ICON_CONTENT_SCALE)
+            .toInt()
+            .coerceAtLeast(1)
+        val canvas = BufferedImage(canvasPx, canvasPx, BufferedImage.TYPE_INT_ARGB)
+        val g = canvas.createGraphics()
+        configureQuality(g)
+        drawTrimmedAndScaled(g, logo, canvasPx, SPLASH_ICON_CONTENT_SCALE)
         g.dispose()
         return canvas
     }

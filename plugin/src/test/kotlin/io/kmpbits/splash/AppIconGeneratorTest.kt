@@ -92,6 +92,34 @@ class AppIconGeneratorTest {
     }
 
     @Test
+    fun `renderSplashIcon pads a logo drawn edge-to-edge so it isn't clipped by the icon mask`() {
+        val edgeToEdgeLogo = BufferedImage(40, 40, BufferedImage.TYPE_INT_ARGB)
+        val g = edgeToEdgeLogo.createGraphics()
+        g.color = Color.RED
+        g.fillRect(0, 0, 40, 40)
+        g.dispose()
+
+        val splashIcon = AppIconGenerator.renderSplashIcon(edgeToEdgeLogo)
+
+        assertTrue(
+            splashIcon.width > edgeToEdgeLogo.width,
+            "expected the canvas to grow to make room for padding, was ${splashIcon.width}",
+        )
+        assertEquals(0, splashIcon.argbAt(0, 0).alpha(), "expected the canvas corner to be padding, not logo content")
+        val center = splashIcon.width / 2
+        assertTrue(splashIcon.argbAt(center, center).red() > 150, "expected the logo to still be drawn at the center")
+    }
+
+    @Test
+    fun `renderSplashIcon centers an already-padded logo without growing the canvas much`() {
+        val splashIcon = AppIconGenerator.renderSplashIcon(paddedTestLogo())
+
+        assertEquals(0, splashIcon.argbAt(0, 0).alpha(), "expected the canvas corner to stay transparent")
+        val center = splashIcon.width / 2
+        assertTrue(splashIcon.argbAt(center, center).red() > 150, "expected the drawn logo's red channel to dominate")
+    }
+
+    @Test
     fun `parseHexColor parses a hash-prefixed hex string`() {
         val color = AppIconGenerator.parseHexColor("#FF0000")
 

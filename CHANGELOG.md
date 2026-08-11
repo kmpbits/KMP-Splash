@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.2
+
+### Fixed
+- **Android splash icon no longer gets clipped by the system's SplashScreen mask.** `windowSplashScreenAnimatedIcon` was set to a straight copy of the source logo, but Android's SplashScreen API (API 31+) masks that icon into a circle and crops any artwork outside the inner ~2/3 safe zone — the same convention as adaptive launcher icons. A logo drawn edge-to-edge (no built-in transparent padding) was therefore cropped on-device even though it rendered correctly everywhere else. Raster logos (`png`/`jpg`/`jpeg`/`gif`/`bmp`) are now trimmed and re-centered onto a padded transparent canvas before being written, via a new `AppIconGenerator.renderSplashIcon()` (reusing the same trim/scale/center approach already used for the launcher icon). Vector/SVG/WebP logos, which can't be rasterized this way, are unaffected and still copied through as before. The launcher/home-screen icon (`generateAppIcon`) is untouched by this change — it already had its own padding.
+
 ## 1.4.1
 
 ### Fixed

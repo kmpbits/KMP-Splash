@@ -1,5 +1,6 @@
 package io.kmpbits.splash.tasks
 
+import io.kmpbits.splash.AppIconGenerator
 import io.kmpbits.splash.ExitAnimation
 import io.kmpbits.splash.template.AndroidSplashTemplate
 import io.kmpbits.splash.toKotlinExpression
@@ -13,6 +14,8 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import java.io.File
+import javax.imageio.ImageIO
 
 /**
  * Task that generates Android-specific splash screen resources.
@@ -101,21 +104,43 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
                 )
             }
             val drawableDir = resDir.resolve("drawable").also { it.mkdirs() }
-            val destFile = drawableDir.resolve("ic_kmp_splash_logo.${src.extension}")
-            src.copyTo(destFile, overwrite = true)
-            logger.lifecycle("KmpSplash: copied logo to ${destFile.absolutePath}")
+            writeSplashLogo(src, drawableDir)
+            logger.lifecycle("KmpSplash: wrote logo to $drawableDir")
         }
 
         logoNightSourceFile.orNull?.asFile?.let { src ->
             if (src.exists()) {
                 val drawableNightDir = resDir.resolve("drawable-night").also { it.mkdirs() }
-                val destFile = drawableNightDir.resolve("ic_kmp_splash_logo.${src.extension}")
-                src.copyTo(destFile, overwrite = true)
-                logger.lifecycle("KmpSplash: copied night logo to ${destFile.absolutePath}")
+                writeSplashLogo(src, drawableNightDir)
+                logger.lifecycle("KmpSplash: wrote night logo to $drawableNightDir")
             }
         }
 
         generateSplashConfig()
+    }
+
+    /**
+     * Writes the splash logo into [destDir] as `ic_kmp_splash_logo.*`. Raster formats are
+     * rasterized through [AppIconGenerator.renderSplashIcon] first, padding artwork drawn
+     * edge-to-edge so Android's SplashScreen API icon mask (API 31+) doesn't crop it — see
+     * [AppIconGenerator.SPLASH_ICON_CONTENT_SCALE]. Other formats (vector drawables, SVG, WebP)
+     * can't be rasterized this way and are copied through unchanged.
+     */
+    private fun writeSplashLogo(src: File, destDir: File) {
+        if (src.extension.lowercase() !in AppIconGenerator.SUPPORTED_LOGO_EXTENSIONS) {
+            src.copyTo(destDir.resolve("ic_kmp_splash_logo.${src.extension}"), overwrite = true)
+            return
+        }
+
+        val logo = ImageIO.read(src)
+            ?: throw org.gradle.api.GradleException(
+                "KmpSplash: could not decode logo file '${src.absolutePath}' as an image."
+            )
+        ImageIO.write(
+            AppIconGenerator.renderSplashIcon(logo),
+            "png",
+            destDir.resolve("ic_kmp_splash_logo.png"),
+        )
     }
 
     private fun generateSplashConfig() {
