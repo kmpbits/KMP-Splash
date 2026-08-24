@@ -281,6 +281,20 @@ class MainActivity : AppCompatActivity() {
 
 `installKmpSplash()` must be called before `super.onCreate()`, for the same reason `SplashActivity` calls it there internally. It works on any `ComponentActivity` subclass, so it's also the right choice for any other custom base class.
 
+> [!IMPORTANT]
+> `AppCompatActivity` requires an AppCompat-descended theme to be active by the time `setContentView()` runs — the plugin's generated theme intentionally isn't one, so pure-Compose apps aren't forced onto AppCompat. Without a fix, you'll hit `IllegalStateException: You need to use a Theme.AppCompat theme (or descendant) with this activity.` **Don't** try to fix this by redefining `Theme.App` yourself in `src/main/res` — the plugin's generated resources take priority over your module's own in AGP's resource merge, so your definition is silently ignored. Instead, define your own, differently-named theme and point `androidPostSplashTheme` at it:
+>
+> ```kotlin
+> // res/values/themes.xml
+> // <style name="Theme.MyApp" parent="Theme.AppCompat.DayNight.NoActionBar" />
+>
+> splashScreen {
+>     androidPostSplashTheme = "@style/Theme.MyApp"
+> }
+> ```
+>
+> See `sample/androidApp` for a full working example.
+
 ### iOS
 
 Call `SplashConfig` in your `MainViewController`, passing your app content as the trailing lambda:
