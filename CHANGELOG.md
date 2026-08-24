@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.0
+
+### Added
+- **`androidPostSplashTheme` — point `postSplashScreenTheme` at your own theme.** Reported against `AppCompatActivity` + `installKmpSplash()` (added in 1.5.0): redefining the generated `Theme.App` yourself in `src/main/res` doesn't work as an override, since the plugin's generated resources take priority over a module's own `src/main/res` in AGP's resource merge — your definition is silently ignored, and `AppCompatActivity` still crashes with `IllegalStateException: You need to use a Theme.AppCompat theme...`. `splashScreen { androidPostSplashTheme = "@style/Theme.MyApp" }` fixes this properly: the plugin references your theme directly instead of generating its own `Theme.App`. Only needed by `AppCompatActivity` (or similarly picky custom base classes) — everyone else keeps the default. See the README's "Using a Different Base Class" section, and `sample/androidApp` for a working example.
+
 ## 1.5.0
 
 ### Added
