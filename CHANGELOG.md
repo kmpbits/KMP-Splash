@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0
+
+### Added
+- **`installKmpSplash()` — install the splash screen without extending `SplashActivity`.** Previously, `MainActivity` had to extend `SplashActivity` to get splash behavior, which conflicted with any other required base class — most commonly `AppCompatActivity`, needed for `AppCompatDelegate.setApplicationLocales()` and other AppCompat-only APIs, since Kotlin doesn't support extending two classes. `installKmpSplash(isReady, onFinished)` is a new extension function on `ComponentActivity` that does the same work `SplashActivity.onCreate()` always did — install the splash screen, drive its visibility from `isReady`, run the configured `SplashDefaults.exitAnimation` — but as a function call instead of a base class, so it works with `AppCompatActivity` or any other custom base class. Call it at the top of your own `onCreate()`, before `super.onCreate()`. `SplashActivity` is unchanged and now implemented in terms of this function internally — existing code needs no changes; use `installKmpSplash()` only if `SplashActivity` doesn't fit your class hierarchy. See the README's "Using a Different Base Class" section for a full example.
+
 ## 1.4.2
 
 ### Fixed
