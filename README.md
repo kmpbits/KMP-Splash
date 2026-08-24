@@ -255,6 +255,32 @@ class MainActivity : SplashActivity() {
 > [!IMPORTANT]
 > Do **not** call `enableEdgeToEdge()` inside your own `onCreate()` override. Doing so runs it before `installSplashScreen()`, which causes a stray toolbar to appear on the first frame.
 
+#### Using a Different Base Class (AppCompat, etc.)
+
+If `MainActivity` needs to extend something other than `SplashActivity` — for example `AppCompatActivity`, which is required for `AppCompatDelegate.setApplicationLocales()` and other AppCompat-only APIs — call `installKmpSplash()` directly from `onCreate()` instead of extending `SplashActivity`:
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        installKmpSplash(
+            isReady = {
+                delay(1000) // Load data, check auth, etc.
+                true
+            },
+            onFinished = {
+                setContent {
+                    App()
+                }
+            },
+        )
+        super.onCreate(savedInstanceState)
+    }
+}
+```
+
+`installKmpSplash()` must be called before `super.onCreate()`, for the same reason `SplashActivity` calls it there internally. It works on any `ComponentActivity` subclass, so it's also the right choice for any other custom base class.
+
 ### iOS
 
 Call `SplashConfig` in your `MainViewController`, passing your app content as the trailing lambda:
