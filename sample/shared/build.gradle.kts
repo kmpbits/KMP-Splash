@@ -33,6 +33,9 @@ splashScreen {
     exitAnimation = ExitAnimation.SlideUp()
     androidAppPath = "sample/androidApp"
     generateAppIcon = true
+    // androidApp's MainActivity extends AppCompatActivity (see its installKmpSplash() demo),
+    // which requires postSplashScreenTheme to resolve to an AppCompat-descended theme.
+    androidPostSplashTheme = "@style/Theme.App.AppCompat"
 }
 
 android {
