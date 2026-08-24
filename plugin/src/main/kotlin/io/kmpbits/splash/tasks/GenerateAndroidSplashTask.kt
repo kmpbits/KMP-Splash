@@ -62,6 +62,11 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
     @get:Optional
     abstract val exitAnimation: Property<ExitAnimation>
 
+    /** Consumer-supplied `postSplashScreenTheme` reference, e.g. `"@style/Theme.MyApp"`. */
+    @get:Input
+    @get:Optional
+    abstract val postSplashTheme: Property<String>
+
     /** Points to the generated res directory inside the build folder. */
     @get:OutputDirectory
     abstract val resOutputDir: DirectoryProperty
@@ -80,6 +85,7 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
             AndroidSplashTemplate.generateThemes(
                 backgroundColor = backgroundColor.get(),
                 logoDrawableName = androidLogoName,
+                postSplashTheme = postSplashTheme.orNull,
             )
         )
         logger.lifecycle("KmpSplash: wrote ${valuesDir.resolve("theme.xml").absolutePath}")
@@ -90,6 +96,7 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
                 AndroidSplashTemplate.generateNightThemes(
                     backgroundColorNight = nightColor,
                     logoDrawableName = androidLogoName,
+                    postSplashTheme = postSplashTheme.orNull,
                 )
             )
             logger.lifecycle("KmpSplash: wrote ${nightDir.resolve("theme.xml").absolutePath}")

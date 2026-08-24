@@ -135,4 +135,28 @@ abstract class KmpSplashExtension {
      */
     @get:Input
     abstract val generateAppIcon: Property<Boolean>
+
+    /**
+     * Overrides `postSplashScreenTheme` with your own theme, instead of the plugin-generated
+     * `Theme.App`.
+     *
+     * Needed if `MainActivity` extends `AppCompatActivity` (via `installKmpSplash()`):
+     * `AppCompatActivity` requires an AppCompat-descended theme to be active by the time
+     * `setContentView()` runs, and the generated `Theme.App` intentionally isn't one — pure
+     * Compose apps shouldn't be forced onto AppCompat. Redefining `Theme.App` yourself in
+     * `src/main/res` does **not** work as an override: the plugin's generated resources take
+     * priority over your module's own `src/main/res` in AGP's resource merge, so your
+     * definition would be silently ignored. Point this at your own, differently-named theme
+     * instead — the plugin will reference it directly.
+     *
+     * Example:
+     * ```kotlin
+     * splashScreen {
+     *     androidPostSplashTheme = "@style/Theme.MyApp"
+     * }
+     * ```
+     */
+    @get:Input
+    @get:Optional
+    abstract val androidPostSplashTheme: Property<String>
 }

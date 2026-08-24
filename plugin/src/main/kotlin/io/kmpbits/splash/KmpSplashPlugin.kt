@@ -201,6 +201,7 @@ class KmpSplashPlugin : Plugin<Project> {
                     })
                 )
                 exitAnimation.set(ext.exitAnimation)
+                postSplashTheme.set(ext.androidPostSplashTheme)
             }
         )
 

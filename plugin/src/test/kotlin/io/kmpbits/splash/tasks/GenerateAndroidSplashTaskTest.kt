@@ -25,4 +25,38 @@ class GenerateAndroidSplashTaskTest {
                 "declarations without an explicit visibility modifier), but was:\n$result"
         )
     }
+
+    @Test
+    fun `postSplashTheme unset generates the default fallback Theme App`() {
+        val project = ProjectBuilder.builder().build()
+        val task = project.tasks.create("generateTest", GenerateAndroidSplashTask::class.java)
+
+        val resDir = File(project.projectDir, "generated/res")
+        task.backgroundColor.set("#FFFFFF")
+        task.resOutputDir.set(resDir)
+        task.generate()
+
+        val theme = resDir.resolve("values/theme.xml").readText()
+        assertTrue(theme.contains("""<item name="postSplashScreenTheme">@style/Theme.App</item>"""))
+        assertTrue(theme.contains("""<style name="Theme.App" parent="android:Theme.Material.NoActionBar"/>"""))
+    }
+
+    @Test
+    fun `postSplashTheme set points postSplashScreenTheme at the consumer's own theme`() {
+        val project = ProjectBuilder.builder().build()
+        val task = project.tasks.create("generateTest", GenerateAndroidSplashTask::class.java)
+
+        val resDir = File(project.projectDir, "generated/res")
+        task.backgroundColor.set("#FFFFFF")
+        task.postSplashTheme.set("@style/Theme.MyApp")
+        task.resOutputDir.set(resDir)
+        task.generate()
+
+        val theme = resDir.resolve("values/theme.xml").readText()
+        assertTrue(theme.contains("""<item name="postSplashScreenTheme">@style/Theme.MyApp</item>"""))
+        assertTrue(
+            !theme.contains("Theme.App\""),
+            "expected the unused fallback Theme.App style to be omitted when postSplashTheme is set, but was:\n$theme"
+        )
+    }
 }
