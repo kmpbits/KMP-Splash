@@ -2,12 +2,6 @@ package io.kmpbits.splash
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
 /**
  * A base [ComponentActivity] that handles the Android splash screen API via
@@ -15,11 +9,11 @@ import kotlinx.coroutines.launch
  *
  * Splash visibility and exit animation are both driven by [isReady] and
  * [SplashDefaults.exitAnimation] respectively, set automatically by the Gradle plugin.
+ *
+ * If your `MainActivity` needs to extend a different base class — e.g. `AppCompatActivity` —
+ * use [installKmpSplash] directly instead of extending this class.
  */
 abstract class SplashActivity : ComponentActivity() {
-
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private var ready = false
 
     /**
      * Override this to provide the condition for when the splash screen should be dismissed.
@@ -33,51 +27,15 @@ abstract class SplashActivity : ComponentActivity() {
     abstract fun onFinished()
 
     /**
-     * Called after [installSplashScreen] but before [super.onCreate][ComponentActivity.onCreate].
-     * Override to perform setup that must happen in this exact window — e.g. [enableEdgeToEdge].
+     * Called after [installKmpSplash] installs the splash screen but before
+     * [super.onCreate][ComponentActivity.onCreate]. Override to perform setup that must happen
+     * in this exact window — e.g. `enableEdgeToEdge()`.
      */
     protected open fun onPreCreate() {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        installKmpSplash(isReady = ::isReady, onFinished = ::onFinished)
         onPreCreate()
         super.onCreate(savedInstanceState)
-
-        splashScreen.setKeepOnScreenCondition { !ready }
-
-        val anim = SplashDefaults.exitAnimation
-        if (anim != ExitAnimation.None) {
-            splashScreen.setOnExitAnimationListener { provider ->
-                val view = provider.view
-                when (anim) {
-                    is ExitAnimation.FadeOut -> view.animate()
-                        .alpha(0f)
-                        .setDuration(anim.durationMs.toLong())
-                        .withEndAction { provider.remove() }
-                        .start()
-                    is ExitAnimation.SlideUp -> view.animate()
-                        .translationY(-view.height.toFloat())
-                        .setDuration(anim.durationMs.toLong())
-                        .withEndAction { provider.remove() }
-                        .start()
-                    is ExitAnimation.SlideDown -> view.animate()
-                        .translationY(view.height.toFloat())
-                        .setDuration(anim.durationMs.toLong())
-                        .withEndAction { provider.remove() }
-                        .start()
-                    is ExitAnimation.None -> provider.remove()
-                }
-            }
-        }
-
-        scope.launch {
-            ready = isReady()
-            onFinished()
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        scope.cancel()
     }
 }
