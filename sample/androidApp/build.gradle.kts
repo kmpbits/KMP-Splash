@@ -29,4 +29,5 @@ android {
 dependencies {
     implementation(project(":runtime"))
     implementation(project(":sample:shared"))
+    implementation(libs.androidx.appcompat)
 }
