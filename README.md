@@ -347,7 +347,7 @@ Wrap your root view:
 ```swift
 struct ContentView: View {
     var body: some View {
-        KmpSplashView(isReady: {
+        KmpSplashView(awaitReady: {
             await AppGraph.shared.warmUp() // your own suspend fun in :shared, bridged to async
         }) {
             RootView()
@@ -356,12 +356,60 @@ struct ContentView: View {
 }
 ```
 
-`isReady` is optional — omit it to just hold the launch screen until SwiftUI's first frame, then
-run the exit animation:
+`awaitReady` is optional — omit it to just hold the launch screen until SwiftUI's first frame,
+then run the exit animation:
 
 ```swift
 KmpSplashView { RootView() }
 ```
+
+> [!IMPORTANT]
+> **`awaitReady` is called once and awaited to completion — it is not a condition SwiftUI
+> re-checks.** It's the same contract as `isReady` on the Compose/Android side (a suspend
+> function you await until your app is ready), just without the `Boolean` return value Kotlin
+> needs and Swift doesn't. A common mistake is passing a snapshot check instead of an actual wait:
+>
+> ```swift
+> // Wrong: evaluated once, immediately, regardless of whether viewModel is actually ready —
+> // the splash dismisses instantly and this Bool is silently discarded ("Result of operator
+> // '!=' is unused"), because awaitReady's return type is Void, not Bool.
+> KmpSplashView(awaitReady: {
+>     viewModel.destination != .splash
+> }) { ... }
+> ```
+>
+> If your readiness signal is a value that changes over time — e.g. a `@Published` property on
+> an `ObservableObject` view model, which is the common shape when a KMP `StateFlow` is bridged
+> into SwiftUI — `awaitReady` needs to itself suspend until that value settles, then return.
+> Combine's `.values` async sequence does this cleanly:
+>
+> ```swift
+> import Combine
+>
+> struct SplashView: View {
+>     @StateObject private var viewModel = SplashViewModelWrapper()
+>
+>     var body: some View {
+>         KmpSplashView(awaitReady: {
+>             guard viewModel.destination == .splash else { return } // already resolved
+>             for await destination in viewModel.$destination.values {
+>                 if destination != .splash { break }
+>             }
+>         }) {
+>             switch viewModel.destination {
+>             case .splash: EmptyView()      // hidden behind the KmpSplashView overlay anyway
+>             case .main: MainView()
+>             case .login: LoginView()
+>             // ...
+>             }
+>         }
+>     }
+> }
+> ```
+>
+> `content` is free to keep re-rendering off `viewModel.destination` the whole time — it's simply
+> invisible until the overlay animates away, so by the time `awaitReady` returns, `content` is
+> already showing the right screen.
 
 `KmpSplashView.swift` is regenerated on every Gradle sync — do not edit it. For projects created
 with Xcode 16+ (synchronized folder groups) no `.pbxproj` change is needed; for older projects the
