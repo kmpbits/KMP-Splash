@@ -349,19 +349,27 @@ struct ContentView: View {
     var body: some View {
         KmpSplashView(awaitReady: {
             await AppGraph.shared.warmUp() // your own suspend fun in :shared, bridged to async
-        }) {
+        }, content: {
             RootView()
-        }
+        })
     }
 }
 ```
 
 `awaitReady` is optional — omit it to just hold the launch screen until SwiftUI's first frame,
-then run the exit animation:
+then run the exit animation. With only one closure to pass, trailing closure syntax is fine here:
 
 ```swift
 KmpSplashView { RootView() }
 ```
+
+> [!NOTE]
+> Both examples above pass `content` with an explicit label rather than as a trailing closure
+> when `awaitReady` is also given. `KmpSplashView(awaitReady: {...}) { ... }` compiles identically,
+> but SwiftLint's default `multiple_closures_with_trailing_closure` rule flags any trailing
+> closure on a call with more than one closure argument — not just Swift's dedicated
+> multiple-trailing-closure syntax (`foo { } second: { }`). Fully-labeled calls satisfy that rule
+> either way, so that's what's shown here.
 
 > [!IMPORTANT]
 > **`awaitReady` is called once and awaited to completion — it is not a condition SwiftUI
@@ -395,14 +403,14 @@ KmpSplashView { RootView() }
 >             for await destination in viewModel.$destination.values {
 >                 if destination != .splash { break }
 >             }
->         }) {
+>         }, content: {
 >             switch viewModel.destination {
 >             case .splash: EmptyView()      // hidden behind the KmpSplashView overlay anyway
 >             case .main: MainView()
 >             case .login: LoginView()
 >             // ...
 >             }
->         }
+>         })
 >     }
 > }
 > ```
