@@ -195,7 +195,7 @@ class KmpSplashFunctionalTest {
 
         val swift = File(iosAppDir, "KmpSplashView.swift")
         assertTrue(swift.exists())
-        assertTrue(swift.readText().contains("public struct SplashView"))
+        assertTrue(swift.readText().contains("public struct KmpSplashView"))
 
         val splashInit = File(projectDir, "build/generated/kmpSplash/iosMain/kotlin/io/kmpbits/splash/SplashInit.kt")
         assertTrue(!splashInit.exists())

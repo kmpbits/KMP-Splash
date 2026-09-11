@@ -337,7 +337,7 @@ Wrap your root view:
 ```swift
 struct ContentView: View {
     var body: some View {
-        SplashView(isReady: {
+        KmpSplashView(isReady: {
             await AppGraph.shared.warmUp() // your own suspend fun in :shared, bridged to async
         }) {
             RootView()
@@ -350,7 +350,7 @@ struct ContentView: View {
 run the exit animation:
 
 ```swift
-SplashView { RootView() }
+KmpSplashView { RootView() }
 ```
 
 `KmpSplashView.swift` is regenerated on every Gradle sync — do not edit it. For projects created

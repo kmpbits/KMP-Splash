@@ -545,24 +545,37 @@ $bgColorLine$nightColorLine$logoLine$logoNightLine$exitAnimLine
     private fun logoContentsJson(lightName: String?, nightName: String?): String {
         val images = mutableListOf<String>()
 
-        if (lightName != null) {
-            images.add("""{ "idiom": "universal", "filename": "$lightName", "scale": "1x" }""")
-            images.add("""{ "idiom": "universal", "filename": "$lightName", "scale": "2x" }""")
-            images.add("""{ "idiom": "universal", "filename": "$lightName", "scale": "3x" }""")
+        fun entriesFor(fileName: String, dark: Boolean) {
+            val appearance = if (dark) {
+                """ "appearances": [ { "appearance": "luminosity", "value": "dark" } ], """
+            } else ""
+            if (fileName.isVectorAsset()) {
+                // A vector asset is a single unscaled entry, not 1x/2x/3x — Xcode rasterizes
+                // (or preserves) it from the one file.
+                images.add("""{ $appearance "idiom": "universal", "filename": "$fileName" }""")
+            } else {
+                images.add("""{ $appearance "idiom": "universal", "filename": "$fileName", "scale": "1x" }""")
+                images.add("""{ $appearance "idiom": "universal", "filename": "$fileName", "scale": "2x" }""")
+                images.add("""{ $appearance "idiom": "universal", "filename": "$fileName", "scale": "3x" }""")
+            }
         }
 
-        if (nightName != null) {
-            val appearance = """ "appearances": [ { "appearance": "luminosity", "value": "dark" } ], """
-            images.add("""{ $appearance "idiom": "universal", "filename": "$nightName", "scale": "1x" }""")
-            images.add("""{ $appearance "idiom": "universal", "filename": "$nightName", "scale": "2x" }""")
-            images.add("""{ $appearance "idiom": "universal", "filename": "$nightName", "scale": "3x" }""")
-        }
+        if (lightName != null) entriesFor(lightName, dark = false)
+        if (nightName != null) entriesFor(nightName, dark = true)
+
+        val isVector = lightName?.isVectorAsset() == true || nightName?.isVectorAsset() == true
+        val properties = if (isVector) {
+            ",\n  \"properties\": { \"preserves-vector-representation\": true }"
+        } else ""
 
         return """{
   "images": [
     ${images.joinToString(",\n    ")}
   ],
-  "info": { "author": "kmp-splash", "version": 1 }
+  "info": { "author": "kmp-splash", "version": 1 }$properties
 }"""
     }
+
+    private fun String.isVectorAsset(): Boolean =
+        endsWith(".svg", ignoreCase = true) || endsWith(".pdf", ignoreCase = true)
 }
