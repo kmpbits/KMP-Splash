@@ -74,6 +74,13 @@ class KmpSplashPlugin : Plugin<Project> {
                         }
                     )
                 )
+                swiftViewFile.set(
+                    project.rootProject.layout.file(
+                        ext.iosProjectPath.map { iosPath ->
+                            project.rootProject.file("$iosPath/KmpSplashView.swift")
+                        }
+                    )
+                )
                 logoFilePath.set(ext.logo.map { it.fileName })
                 logoSourceFile.set(
                     project.layout.file(ext.logo.map { logo ->
