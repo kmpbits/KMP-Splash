@@ -180,7 +180,7 @@ class KmpSplashFunctionalTest {
             splashScreen {
                 backgroundColor = io.kmpbits.splash.SplashColor.hex("#FFFFFF")
                 iosProjectPath = "iosApp"
-                iosUi = io.kmpbits.splash.IosUi.SwiftUI
+                uiFramework = io.kmpbits.splash.UiFramework.Native
                 exitAnimation = io.kmpbits.splash.ExitAnimation.FadeOut(300)
             }
         """.trimIndent())

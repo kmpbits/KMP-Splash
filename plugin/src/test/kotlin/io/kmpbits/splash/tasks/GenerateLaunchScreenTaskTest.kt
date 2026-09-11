@@ -31,7 +31,7 @@ class GenerateLaunchScreenTaskTest {
         task.splashConfigFile.set(File(project.projectDir, "generated/SplashInit.kt"))
         task.pbxprojFile.set(File(project.projectDir, "iosApp.xcodeproj/project.pbxproj"))
         task.swiftViewFile.set(File(project.projectDir, "iosApp/KmpSplashView.swift"))
-        task.iosUi.set(io.kmpbits.splash.IosUi.Compose)
+        task.uiFramework.set(io.kmpbits.splash.UiFramework.Compose)
         return task
     }
 
@@ -62,7 +62,7 @@ class GenerateLaunchScreenTaskTest {
         File(project.projectDir, "iosApp/Info.plist").also { it.parentFile.mkdirs() }
             .writeText("<?xml version=\"1.0\"?><plist version=\"1.0\"><dict></dict></plist>")
         task.backgroundColor.set("#0000FF")
-        task.iosUi.set(io.kmpbits.splash.IosUi.SwiftUI)
+        task.uiFramework.set(io.kmpbits.splash.UiFramework.Native)
         task.exitAnimation.set(io.kmpbits.splash.ExitAnimation.None)
         return task
     }

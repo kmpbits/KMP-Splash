@@ -59,25 +59,25 @@ class KmpSplashPluginTest {
     }
 
     @Test
-    fun `iosUi defaults to Compose`() {
+    fun `uiFramework defaults to Compose`() {
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("org.jetbrains.kotlin.multiplatform")
         project.plugins.apply("io.github.kmpbits.splash")
 
         val ext = project.extensions.getByType(KmpSplashExtension::class.java)
-        assertEquals(IosUi.Compose, ext.iosUi.get())
+        assertEquals(UiFramework.Compose, ext.uiFramework.get())
     }
 
     @Test
-    fun `iosUi is wired into the generateLaunchScreen task`() {
+    fun `uiFramework is wired into the generateLaunchScreen task`() {
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("org.jetbrains.kotlin.multiplatform")
         project.plugins.apply("io.github.kmpbits.splash")
 
         val ext = project.extensions.getByType(KmpSplashExtension::class.java)
-        ext.iosUi.set(IosUi.SwiftUI)
+        ext.uiFramework.set(UiFramework.Native)
 
-        assertEquals(IosUi.SwiftUI, project.generateLaunchScreenTask().iosUi.get())
+        assertEquals(UiFramework.Native, project.generateLaunchScreenTask().uiFramework.get())
     }
 
     @Test
