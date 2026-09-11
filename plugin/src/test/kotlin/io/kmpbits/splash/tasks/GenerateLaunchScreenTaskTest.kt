@@ -80,7 +80,7 @@ class GenerateLaunchScreenTaskTest {
 
         val swift = File(project.projectDir, "iosApp/KmpSplashView.swift")
         assertTrue(swift.exists(), "expected KmpSplashView.swift to be generated")
-        assertTrue(swift.readText().contains("public struct SplashView"))
+        assertTrue(swift.readText().contains("public struct KmpSplashView"))
         assertTrue(swift.readText().contains("""Image("logo")"""))
 
         assertFalse(
@@ -146,6 +146,44 @@ class GenerateLaunchScreenTaskTest {
         val task = swiftUiTask(project, "{ /* no sources phase */ }")
         task.generate()
         assertTrue(File(project.projectDir, "iosApp/KmpSplashView.swift").exists())
+    }
+
+    @Test
+    fun `svg logo produces a single vector imageset entry`() {
+        val project = ProjectBuilder.builder().build()
+        val task = newTask(project)
+        File(project.projectDir, "iosApp.xcodeproj").mkdirs()
+        File(project.projectDir, "iosApp.xcodeproj/project.pbxproj").writeText("")
+        val svg = File(project.projectDir, "logo.svg").also {
+            it.writeText("<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>")
+        }
+        task.backgroundColor.set("#0000FF")
+        task.logoSourceFile.set(svg)
+        task.logoFilePath.set("logo.svg")
+        task.logoResourceName.set("logo")
+        task.generate()
+
+        val contents = File(project.projectDir, "iosApp/Assets.xcassets/logo.imageset/Contents.json").readText()
+        assertTrue(contents.contains("\"preserves-vector-representation\""))
+        assertFalse(contents.contains("\"scale\""), "vector imageset must not carry scale entries")
+    }
+
+    @Test
+    fun `raster logo keeps 1x 2x 3x imageset entries`() {
+        val project = ProjectBuilder.builder().build()
+        val task = newTask(project)
+        File(project.projectDir, "iosApp.xcodeproj").mkdirs()
+        File(project.projectDir, "iosApp.xcodeproj/project.pbxproj").writeText("")
+        val png = File(project.projectDir, "logo.png").also { writeTestLogo(it) }
+        task.backgroundColor.set("#0000FF")
+        task.logoSourceFile.set(png)
+        task.logoFilePath.set("logo.png")
+        task.logoResourceName.set("logo")
+        task.generate()
+
+        val contents = File(project.projectDir, "iosApp/Assets.xcassets/logo.imageset/Contents.json").readText()
+        assertTrue(contents.contains("\"scale\": \"3x\""))
+        assertFalse(contents.contains("preserves-vector-representation"))
     }
 
     @Test

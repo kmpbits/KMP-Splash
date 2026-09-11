@@ -40,11 +40,11 @@ import SwiftUI
 /// Holds the native launch screen until `isReady` completes, then animates it away.
 ///
 /// ```swift
-/// SplashView(isReady: { await AppGraph.shared.warmUp() }) {
+/// KmpSplashView(isReady: { await AppGraph.shared.warmUp() }) {
 ///     ContentView()
 /// }
 /// ```
-public struct SplashView<Content: View>: View {
+public struct KmpSplashView<Content: View>: View {
     private let isReady: (() async -> Void)?
     private let content: () -> Content
 
