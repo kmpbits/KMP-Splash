@@ -2,6 +2,8 @@ package io.kmpbits.splash.tasks
 
 import io.kmpbits.splash.AppIconGenerator
 import io.kmpbits.splash.ExitAnimation
+import io.kmpbits.splash.IosUi
+import io.kmpbits.splash.renderSwiftSplashView
 import io.kmpbits.splash.toKotlinExpression
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -65,6 +67,10 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:Optional
     abstract val exitAnimation: Property<ExitAnimation>
 
+    @get:Input
+    @get:Optional
+    abstract val iosUi: Property<IosUi>
+
     /** Whether to also generate a 1024x1024 `AppIcon.appiconset` from `logo`/`backgroundColor`. */
     @get:Input
     @get:Optional
@@ -91,6 +97,10 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:OutputFile
     abstract val pbxprojFile: RegularFileProperty
 
+    /** `<iosProjectPath>/KmpSplashView.swift` — only written when [iosUi] is [IosUi.SwiftUI]. */
+    @get:OutputFile
+    abstract val swiftViewFile: RegularFileProperty
+
     @TaskAction
     fun generate() {
         if (!backgroundColor.isPresent) {
@@ -110,7 +120,88 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
         }
         patchInfoPlist(xcassetsDir.asFile.get().parentFile.resolve("Info.plist"), resolvedLogoName)
         patchProjectPbxproj()
-        generateSplashConfig(resolvedColor, resolvedLogoName)
+
+        when (iosUi.getOrElse(IosUi.Compose)) {
+            IosUi.Compose -> generateSplashConfig(resolvedColor, resolvedLogoName)
+            IosUi.SwiftUI -> {
+                generateSwiftView(resolvedLogoName)
+                patchProjectPbxprojForSwiftView()
+            }
+        }
+    }
+
+    private fun generateSwiftView(logoName: String?) {
+        val file = swiftViewFile.asFile.get()
+        file.parentFile.mkdirs()
+        file.writeText(
+            renderSwiftSplashView(
+                backgroundColorAssetName = "SplashBackground",
+                logoImageAssetName = logoName,
+                exitAnimation = exitAnimation.getOrElse(ExitAnimation.None),
+            ),
+        )
+        logger.lifecycle("KmpSplash: wrote ${file.absolutePath}")
+    }
+
+    private fun patchProjectPbxprojForSwiftView() {
+        val pbxproj = pbxprojFile.asFile.get()
+        if (!pbxproj.exists()) return
+
+        var text = pbxproj.readText()
+
+        if (text.contains("PBXFileSystemSynchronizedRootGroup")) {
+            logger.lifecycle("KmpSplash: synchronized project group — KmpSplashView.swift is compiled automatically")
+            return
+        }
+
+        val fileRefUuid = "B310DBF22A7B8C1B00943F70"
+        val buildFileUuid = "B310DBF32A7B8C1C00943F70"
+
+        if (text.contains(fileRefUuid)) {
+            logger.lifecycle("KmpSplash: project.pbxproj already references KmpSplashView.swift")
+            return
+        }
+
+        text = text.replace(
+            "/* End PBXBuildFile section */",
+            "\t\t$buildFileUuid /* KmpSplashView.swift in Sources */ = " +
+            "{isa = PBXBuildFile; fileRef = $fileRefUuid /* KmpSplashView.swift */; };\n" +
+            "/* End PBXBuildFile section */",
+        )
+
+        text = text.replace(
+            "/* End PBXFileReference section */",
+            "\t\t$fileRefUuid /* KmpSplashView.swift */ = " +
+            "{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; " +
+            "path = KmpSplashView.swift; sourceTree = \"<group>\"; };\n" +
+            "/* End PBXFileReference section */",
+        )
+
+        // Keep the file visible in the navigator: list it next to Info.plist when that ref exists.
+        if (text.contains("B310DBB52A7B8C1B00943F69 /* Info.plist */,")) {
+            text = text.replace(
+                "B310DBB52A7B8C1B00943F69 /* Info.plist */,",
+                "B310DBB52A7B8C1B00943F69 /* Info.plist */,\n\t\t\t\t$fileRefUuid /* KmpSplashView.swift */,",
+            )
+        }
+
+        // Insert into the first `files = (` under a PBXSourcesBuildPhase.
+        val sourcesAnchor = Regex("""isa = PBXSourcesBuildPhase;[\s\S]*?files = \(""")
+        val match = sourcesAnchor.find(text)
+        if (match == null) {
+            logger.warn(
+                "KmpSplash: couldn't find a Sources build phase in project.pbxproj. " +
+                "Drag ${swiftViewFile.asFile.get().name} into your app target in Xcode once.",
+            )
+        } else {
+            val insertAt = match.range.last + 1
+            text = text.substring(0, insertAt) +
+                "\n\t\t\t\t$buildFileUuid /* KmpSplashView.swift in Sources */," +
+                text.substring(insertAt)
+        }
+
+        pbxproj.writeText(text)
+        logger.lifecycle("KmpSplash: patched project.pbxproj to compile KmpSplashView.swift")
     }
 
     private fun copyLogoAssets(): String? {

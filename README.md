@@ -314,6 +314,49 @@ fun MainViewController() = ComposeUIViewController {
 
 `SplashConfig` manages the splash/content transition internally, with no state boilerplate needed. Colors and logo are picked up automatically from your Gradle configuration.
 
+### SwiftUI (native iOS UI)
+
+If your KMP app uses **SwiftUI** for the iOS UI instead of Compose Multiplatform, set `iosUi`:
+
+```kotlin
+splashScreen {
+    backgroundColor = SplashColor.hex("#FFFFFF")
+    logo = SplashLogo.resource("splash_logo.png")
+    exitAnimation = ExitAnimation.FadeOut(300)
+    iosUi = IosUi.SwiftUI
+}
+```
+
+The plugin still generates the native `UILaunchScreen`, the `Assets.xcassets`, and the app icon.
+Instead of the Compose `SplashInit.kt`, it generates **`KmpSplashView.swift`** into your Xcode
+project (`iosProjectPath`) and wires it into the build. You do **not** need the
+`io.github.kmpbits:splash-runtime` dependency in this mode.
+
+Wrap your root view:
+
+```swift
+struct ContentView: View {
+    var body: some View {
+        SplashView(isReady: {
+            await AppGraph.shared.warmUp() // your own suspend fun in :shared, bridged to async
+        }) {
+            RootView()
+        }
+    }
+}
+```
+
+`isReady` is optional — omit it to just hold the launch screen until SwiftUI's first frame, then
+run the exit animation:
+
+```swift
+SplashView { RootView() }
+```
+
+`KmpSplashView.swift` is regenerated on every Gradle sync — do not edit it. For projects created
+with Xcode 16+ (synchronized folder groups) no `.pbxproj` change is needed; for older projects the
+plugin patches the Sources build phase automatically.
+
 ---
 
 ## How it Works
