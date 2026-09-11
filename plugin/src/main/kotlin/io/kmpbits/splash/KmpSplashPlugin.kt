@@ -363,25 +363,46 @@ internal fun requiresAndroidAppPathForNativeUi(
 
 /**
  * Wires [task]'s generated `SplashInit.kt` (in [generatedKotlinDir]) into [androidProject]'s own
- * `main` Android source set instead of the project applying the plugin. `SplashInit.kt` imports
+ * Kotlin source set instead of the project applying the plugin. `SplashInit.kt` imports
  * `androidx.compose.*`, which needs to resolve against a module that actually depends on Compose —
  * in `androidAppPath` mode that's the separate Android app module, not necessarily the (often
  * Compose-free, business-logic-only) module the plugin is applied to.
  *
- * Uses AGP's own [AndroidSourceSet.getKotlin] rather than the Kotlin Multiplatform DSL, so this
- * works whether [androidProject] is a plain `org.jetbrains.kotlin.android` module (this plugin's
- * own `sample/androidApp`) or a Kotlin Multiplatform one with an `androidTarget()` — both expose
- * the same AGP source set. Registered via `plugins.withId`, which — like the equivalent
- * registration in [KmpSplashPlugin.registerAndroidTask] — is safely order-independent: it fires
- * whenever `com.android.application` is applied to [androidProject], regardless of whether that
- * already happened or hasn't yet.
+ * [androidProject] is one of two shapes, and they are **not** interchangeable — a Kotlin
+ * Multiplatform module's `androidTarget()` does not read AGP's own `sourceSets.main.kotlin` at
+ * all (KGP owns Kotlin compilation for it independently of AGP's classic source set DSL), so
+ * wiring only through AGP would silently compile nothing:
+ * - A Kotlin Multiplatform module (e.g. a KMP `composeApp` with `androidTarget()`, as in the
+ *   common "new KMP module structure" where the Android entry point is still itself a KMP
+ *   module): wire into its `androidMain` [KotlinMultiplatformExtension] source set — the same
+ *   mechanism the classic (non-`androidAppPath`) path above already uses successfully.
+ * - A plain `org.jetbrains.kotlin.android` module (this plugin's own `sample/androidApp`, and
+ *   the more common shape for a thin single-platform Android entry point): wire into AGP's own
+ *   `sourceSets.main.kotlin` via [ApplicationExtension] — [AndroidSourceSet.getKotlin] is where
+ *   `org.jetbrains.kotlin.android` publishes Kotlin sources for AGP to compile.
+ *
+ * Both registrations go through `plugins.withId`, which — like the equivalent registration in
+ * [KmpSplashPlugin.registerAndroidTask] — is safely order-independent: each fires whenever that
+ * plugin is applied to [androidProject], regardless of whether that already happened or hasn't yet.
  */
 private fun wireGeneratedAndroidKotlinSource(
     androidProject: Project,
     task: TaskProvider<GenerateAndroidSplashTask>,
     generatedKotlinDir: Provider<Directory>,
 ) {
-    androidProject.plugins.withId("com.android.application") {
+    androidProject.plugins.withId("org.jetbrains.kotlin.multiplatform") {
+        androidProject.extensions.configure(KotlinMultiplatformExtension::class.java) {
+            sourceSets.matching { it.name == "androidMain" }.configureEach {
+                kotlin.srcDir(generatedKotlinDir)
+            }
+        }
+        androidProject.tasks.configureEach {
+            if (name == "preBuild" || (name.startsWith("compile") && "AndroidMain" in name)) {
+                dependsOn(task)
+            }
+        }
+    }
+    androidProject.plugins.withId("org.jetbrains.kotlin.android") {
         val android = androidProject.extensions.getByType(ApplicationExtension::class.java)
         android.sourceSets.matching { it.name == "main" }.configureEach {
             kotlin.srcDir(generatedKotlinDir)
