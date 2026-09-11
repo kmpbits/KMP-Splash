@@ -46,9 +46,11 @@ import SwiftUI
 /// (native iOS UI)" section for a full example.
 ///
 /// ```swift
-/// KmpSplashView(awaitReady: { await AppGraph.shared.warmUp() }) {
+/// KmpSplashView(awaitReady: {
+///     await AppGraph.shared.warmUp()
+/// }, content: {
 ///     ContentView()
-/// }
+/// })
 /// ```
 public struct KmpSplashView<Content: View>: View {
     private let awaitReady: (() async -> Void)?
