@@ -1,6 +1,7 @@
 package io.kmpbits.splash
 
 import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.ApplicationVariant
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
@@ -10,8 +11,10 @@ import io.kmpbits.splash.tasks.GenerateAppIconTask
 import io.kmpbits.splash.tasks.GenerateLaunchScreenTask
 import io.kmpbits.splash.tasks.PatchSplashManifestTask
 import org.gradle.api.Action
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.compose.ComposeExtension
@@ -31,6 +34,23 @@ class KmpSplashPlugin : Plugin<Project> {
         ext.iosProjectPath.convention("iosApp/iosApp")
         ext.generateAppIcon.convention(false)
         ext.uiFramework.convention(UiFramework.Compose)
+        project.afterEvaluate {
+            // Android is unaffected by uiFramework — the generated SplashInit.kt always targets
+            // Compose and imports androidx.compose.*. Only enforced when this project actually
+            // has an Android target at all; a project with none (e.g. iOS-only) has no Android
+            // splash to misplace, so uiFramework alone shouldn't force it to configure Android.
+            val appliesAndroid = project.plugins.hasPlugin("com.android.application") ||
+                project.plugins.hasPlugin("com.android.library")
+            if (requiresAndroidAppPathForNativeUi(appliesAndroid, ext.uiFramework.get(), ext.androidAppPath.isPresent)) {
+                throw GradleException(
+                    "KmpSplash: 'androidAppPath' is required when uiFramework = UiFramework.Native. " +
+                    "It needs 'androidAppPath' to know which module actually has Compose on its " +
+                    "classpath, since the module applying this plugin often doesn't (e.g. a " +
+                    "shared/business-logic-only module when iOS is native SwiftUI). Set " +
+                    "splashScreen { androidAppPath = \"<your Compose Android module>\" }."
+                )
+            }
+        }
         registerIosTask(project, ext)
         registerAndroidTask(project, ext)
     }
@@ -262,19 +282,23 @@ class KmpSplashPlugin : Plugin<Project> {
         }
 
         project.afterEvaluate {
-            // Register generated Kotlin sources in the KMP androidMain source set.
-            project.extensions.configure(KotlinMultiplatformExtension::class.java) {
-                sourceSets.matching { it.name == "androidMain" }.configureEach {
-                    kotlin.srcDir(generatedKotlinDir)
+            if (!ext.androidAppPath.isPresent) {
+                // Classic mode: the generated Kotlin source (it imports androidx.compose.*) lives
+                // in this same project's androidMain, which is the classic single-module KMP
+                // structure and is assumed to have Compose on its classpath.
+                project.extensions.configure(KotlinMultiplatformExtension::class.java) {
+                    sourceSets.matching { it.name == "androidMain" }.configureEach {
+                        kotlin.srcDir(generatedKotlinDir)
+                    }
                 }
-            }
 
-            // Gradle 9 requires explicit task dependency for directories used as sources that
-            // are not declared as @OutputDirectory on the generating task (splashConfigFile is
-            // @OutputFile, so the parent kotlin dir has no implicit dependency).
-            project.tasks.configureEach {
-                if (name == "preBuild" || (name.startsWith("compile") && "AndroidMain" in name)) {
-                    dependsOn(task)
+                // Gradle 9 requires explicit task dependency for directories used as sources that
+                // are not declared as @OutputDirectory on the generating task (splashConfigFile is
+                // @OutputFile, so the parent kotlin dir has no implicit dependency).
+                project.tasks.configureEach {
+                    if (name == "preBuild" || (name.startsWith("compile") && "AndroidMain" in name)) {
+                        dependsOn(task)
+                    }
                 }
             }
 
@@ -313,7 +337,58 @@ class KmpSplashPlugin : Plugin<Project> {
                             wireVariantResourcesAndManifest(androidProject, variant, task, appIconTask, ext.generateAppIcon)
                         }
                     }
+                    // The generated SplashInit.kt imports androidx.compose.* and must compile
+                    // against a module that actually depends on Compose. In androidAppPath mode
+                    // the module applying this plugin is often pure shared/business-logic code
+                    // with no Compose dependency at all — the separate androidApp module is where
+                    // Compose actually lives — so route the Kotlin source there instead.
+                    wireGeneratedAndroidKotlinSource(androidProject, task, generatedKotlinDir)
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Whether `uiFramework = UiFramework.Native` requires `androidAppPath` to be set: only when this
+ * project actually applies an Android plugin (`appliesAndroid`) — a project with no Android target
+ * at all has no Android splash to misplace, so `uiFramework` alone shouldn't force it to configure
+ * `androidAppPath`. Extracted as a pure function so it's testable without a real AGP application.
+ */
+internal fun requiresAndroidAppPathForNativeUi(
+    appliesAndroid: Boolean,
+    uiFramework: UiFramework,
+    androidAppPathPresent: Boolean,
+): Boolean = appliesAndroid && uiFramework == UiFramework.Native && !androidAppPathPresent
+
+/**
+ * Wires [task]'s generated `SplashInit.kt` (in [generatedKotlinDir]) into [androidProject]'s own
+ * `main` Android source set instead of the project applying the plugin. `SplashInit.kt` imports
+ * `androidx.compose.*`, which needs to resolve against a module that actually depends on Compose —
+ * in `androidAppPath` mode that's the separate Android app module, not necessarily the (often
+ * Compose-free, business-logic-only) module the plugin is applied to.
+ *
+ * Uses AGP's own [AndroidSourceSet.getKotlin] rather than the Kotlin Multiplatform DSL, so this
+ * works whether [androidProject] is a plain `org.jetbrains.kotlin.android` module (this plugin's
+ * own `sample/androidApp`) or a Kotlin Multiplatform one with an `androidTarget()` — both expose
+ * the same AGP source set. Registered via `plugins.withId`, which — like the equivalent
+ * registration in [KmpSplashPlugin.registerAndroidTask] — is safely order-independent: it fires
+ * whenever `com.android.application` is applied to [androidProject], regardless of whether that
+ * already happened or hasn't yet.
+ */
+private fun wireGeneratedAndroidKotlinSource(
+    androidProject: Project,
+    task: TaskProvider<GenerateAndroidSplashTask>,
+    generatedKotlinDir: Provider<Directory>,
+) {
+    androidProject.plugins.withId("com.android.application") {
+        val android = androidProject.extensions.getByType(ApplicationExtension::class.java)
+        android.sourceSets.matching { it.name == "main" }.configureEach {
+            kotlin.srcDir(generatedKotlinDir)
+        }
+        androidProject.tasks.configureEach {
+            if (name == "preBuild" || name.startsWith("compile")) {
+                dependsOn(task)
             }
         }
     }

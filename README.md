@@ -332,6 +332,13 @@ Instead of the Compose `SplashInit.kt`, it generates **`KmpSplashView.swift`** i
 project (`iosProjectPath`) and wires it into the build. You do **not** need the
 `io.github.kmpbits:splash-runtime` dependency in this mode.
 
+`uiFramework` only affects iOS — Android's generated splash is always Compose. **If your project
+has an Android target, `androidAppPath` is required when `uiFramework = UiFramework.Native`:**
+the generated Android `SplashInit.kt` imports `androidx.compose.*`, and the plugin needs
+`androidAppPath` to know which module actually has Compose on its classpath — the module applying
+this plugin is often a shared/business-logic module with no Compose dependency once iOS moves to
+SwiftUI. See the `androidAppPath` section above.
+
 Wrap your root view:
 
 ```swift
