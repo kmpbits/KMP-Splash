@@ -316,14 +316,14 @@ fun MainViewController() = ComposeUIViewController {
 
 ### SwiftUI (native iOS UI)
 
-If your KMP app uses **SwiftUI** for the iOS UI instead of Compose Multiplatform, set `iosUi`:
+If your KMP app uses **SwiftUI** for the iOS UI instead of Compose Multiplatform, set `uiFramework`:
 
 ```kotlin
 splashScreen {
     backgroundColor = SplashColor.hex("#FFFFFF")
     logo = SplashLogo.resource("splash_logo.png")
     exitAnimation = ExitAnimation.FadeOut(300)
-    iosUi = IosUi.SwiftUI
+    uiFramework = UiFramework.Native
 }
 ```
 

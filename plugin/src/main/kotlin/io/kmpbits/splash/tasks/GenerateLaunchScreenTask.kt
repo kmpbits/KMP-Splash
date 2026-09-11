@@ -2,7 +2,7 @@ package io.kmpbits.splash.tasks
 
 import io.kmpbits.splash.AppIconGenerator
 import io.kmpbits.splash.ExitAnimation
-import io.kmpbits.splash.IosUi
+import io.kmpbits.splash.UiFramework
 import io.kmpbits.splash.renderSwiftSplashView
 import io.kmpbits.splash.toKotlinExpression
 import org.gradle.api.DefaultTask
@@ -69,7 +69,7 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
 
     @get:Input
     @get:Optional
-    abstract val iosUi: Property<IosUi>
+    abstract val uiFramework: Property<UiFramework>
 
     /** Whether to also generate a 1024x1024 `AppIcon.appiconset` from `logo`/`backgroundColor`. */
     @get:Input
@@ -97,7 +97,7 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:OutputFile
     abstract val pbxprojFile: RegularFileProperty
 
-    /** `<iosProjectPath>/KmpSplashView.swift` — only written when [iosUi] is [IosUi.SwiftUI]. */
+    /** `<iosProjectPath>/KmpSplashView.swift` — only written when [uiFramework] is [UiFramework.Native]. */
     @get:OutputFile
     abstract val swiftViewFile: RegularFileProperty
 
@@ -121,9 +121,9 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
         patchInfoPlist(xcassetsDir.asFile.get().parentFile.resolve("Info.plist"), resolvedLogoName)
         patchProjectPbxproj()
 
-        when (iosUi.getOrElse(IosUi.Compose)) {
-            IosUi.Compose -> generateSplashConfig(resolvedColor, resolvedLogoName)
-            IosUi.SwiftUI -> {
+        when (uiFramework.getOrElse(UiFramework.Compose)) {
+            UiFramework.Compose -> generateSplashConfig(resolvedColor, resolvedLogoName)
+            UiFramework.Native -> {
                 generateSwiftView(resolvedLogoName)
                 patchProjectPbxprojForSwiftView()
             }
