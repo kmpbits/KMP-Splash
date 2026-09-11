@@ -130,6 +130,9 @@ SplashLogo.resource("logo.png")                              // File in composeR
 SplashLogo.path("src/commonMain/composeResources/drawable/logo.png")  // Custom path relative to module
 ```
 
+> [!WARNING]
+> **A vector (`.svg`) logo works for iOS and Compose, but not for Android's native splash.** iOS's `Assets.xcassets` and Compose Multiplatform's resource system both handle `.svg` directly. Android's native `res/drawable` copy (used by the `themes.xml`-based launch screen, independent of `uiFramework`) does not — `logo` is copied there as-is, and AGP's resource merger rejects anything but `.png`/`.xml`, failing the build with `The file name must end with .xml or .png`. There is currently no per-platform `logo` override, so an `.svg` logo works everywhere except a real Android build: use a `.png`/`.jpg`/`.gif`/`.bmp` (or hand-author an Android Vector Drawable `.xml` at that path) instead. The same raster requirement applies to `generateAppIcon` (see below).
+
 #### Custom Compose resource package
 
 By default, the plugin reads the Compose resource package from `compose { resources { packageOfResClass = ... } }` if you've set it, or replicates Compose's own default naming if you haven't. If auto-detection doesn't find the right value for your project (e.g. an unusual module setup), override it explicitly:
@@ -373,10 +376,11 @@ The Gradle plugin does the heavy lifting at build time so you never touch XML or
 - **Android:** generates `themes.xml` (and `values-night`), copies your logo drawable, and writes a patched **copy** of the `AndroidManifest.xml`, all into the `build/` folder, to apply the splash theme and register a `ContentProvider` that initialises runtime config before your `Activity` starts. Your source files are never modified.
 - **iOS:** generates the `SplashBackground` color asset and logo imageset in `Assets.xcassets`, and patches `Info.plist` and `project.pbxproj` to wire up `UILaunchScreen`. No Storyboard or Xcode required.
 
-| Platform | Native (Booting) | Compose (Loading) |
+| Platform | Native (Booting) | Transition layer (Loading) |
 | :--- | :--- | :--- |
-| **Android** | `themes.xml` + a patched copy of `AndroidManifest.xml` generated into `build/`. Uses `installSplashScreen()`. | `SplashActivity` controls visibility and runs the exit animation via `setOnExitAnimationListener`. |
-| **iOS** | Patches `Info.plist` with `UILaunchScreen`, generates `SplashBackground` color asset and logo imageset in `Assets.xcassets`. | `SplashConfig` uses `isSystemInDarkTheme()` to match the native screen exactly, then animates the exit with `AnimatedVisibility`. |
+| **Android** | `themes.xml` + a patched copy of `AndroidManifest.xml` generated into `build/`. Uses `installSplashScreen()`. | `SplashActivity` controls visibility and runs the exit animation via `setOnExitAnimationListener`. Always Compose, regardless of `uiFramework` (iOS-only). |
+| **iOS**, `uiFramework = UiFramework.Compose` (default) | Patches `Info.plist` with `UILaunchScreen`, generates `SplashBackground` color asset and logo imageset in `Assets.xcassets`. | `SplashConfig` uses `isSystemInDarkTheme()` to match the native screen exactly, then animates the exit with `AnimatedVisibility`. |
+| **iOS**, `uiFramework = UiFramework.Native` | Same `Info.plist`/`Assets.xcassets` generation as above. | Generated `KmpSplashView.swift` reads the same `SplashBackground`/logo assets and drives the exit transition — see [SwiftUI (native iOS UI)](#swiftui-native-ios-ui) above. |
 
 ---
 
