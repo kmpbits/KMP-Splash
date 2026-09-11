@@ -2,6 +2,7 @@ package io.kmpbits.splash.tasks
 
 import io.kmpbits.splash.AppIconGenerator
 import io.kmpbits.splash.ExitAnimation
+import io.kmpbits.splash.IosUi
 import io.kmpbits.splash.toKotlinExpression
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -64,6 +65,10 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:Input
     @get:Optional
     abstract val exitAnimation: Property<ExitAnimation>
+
+    @get:Input
+    @get:Optional
+    abstract val iosUi: Property<IosUi>
 
     /** Whether to also generate a 1024x1024 `AppIcon.appiconset` from `logo`/`backgroundColor`. */
     @get:Input

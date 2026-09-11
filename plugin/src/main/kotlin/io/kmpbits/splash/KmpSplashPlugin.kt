@@ -30,6 +30,7 @@ class KmpSplashPlugin : Plugin<Project> {
         val ext = project.extensions.create("splashScreen", KmpSplashExtension::class.java)
         ext.iosProjectPath.convention("iosApp/iosApp")
         ext.generateAppIcon.convention(false)
+        ext.iosUi.convention(IosUi.Compose)
         registerIosTask(project, ext)
         registerAndroidTask(project, ext)
     }
@@ -93,6 +94,7 @@ class KmpSplashPlugin : Plugin<Project> {
                 )
                 resourcePackage.set(composeResourcePackage(project, ext))
                 exitAnimation.set(ext.exitAnimation)
+                iosUi.set(ext.iosUi)
                 generateAppIcon.set(ext.generateAppIcon)
             }
         )

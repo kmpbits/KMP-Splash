@@ -159,4 +159,22 @@ abstract class KmpSplashExtension {
     @get:Input
     @get:Optional
     abstract val androidPostSplashTheme: Property<String>
+
+    /**
+     * Which iOS UI toolkit the app uses. Defaults to [IosUi.Compose].
+     *
+     * Set to [IosUi.SwiftUI] for a KMP app with a SwiftUI iOS frontend: the plugin then
+     * generates a `KmpSplashView.swift` into your Xcode project — no `splash-runtime`
+     * dependency required — instead of the Compose `SplashInit.kt`.
+     *
+     * Example:
+     * ```kotlin
+     * splashScreen {
+     *     iosUi = IosUi.SwiftUI
+     * }
+     * ```
+     */
+    @get:Input
+    @get:Optional
+    abstract val iosUi: Property<IosUi>
 }
