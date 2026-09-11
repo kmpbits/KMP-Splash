@@ -7,6 +7,7 @@
 
 ### Fixed
 - **Vector (`.svg`/`.pdf`) logos now produce a valid `Assets.xcassets` imageset.** The generated `<logo>.imageset/Contents.json` listed the same vector file three times at `1x`/`2x`/`3x` — invalid for a vector asset, so Xcode couldn't render it (visible in the native `UILaunchScreen`, and in `KmpSplashView`'s `Image(...)` under the new SwiftUI mode). Vector logos now get a single unscaled entry plus `"properties": { "preserves-vector-representation": true }`; raster logos keep the `1x`/`2x`/`3x` set.
+- **`androidAppPath` mode now wires the generated `SplashInit.kt` into the `androidApp` module, not the module applying the plugin.** It always imports `androidx.compose.*`, but was being added to the applying project's own `androidMain` regardless of `androidAppPath` — an `Unresolved reference 'compose'` compile error on any project where that module (often a shared/business-logic module) doesn't depend on Compose, which is the norm once iOS moves to `UiFramework.Native`. It's now routed into the `androidAppPath` module's own Android source set, the same module its resources and manifest patch already target. `androidAppPath` is now a required field when `uiFramework = UiFramework.Native` and the project has an Android target — the plugin fails fast with an actionable message instead of producing this error.
 
 ## 1.6.0
 

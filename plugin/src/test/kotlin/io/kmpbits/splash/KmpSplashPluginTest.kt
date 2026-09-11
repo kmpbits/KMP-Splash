@@ -1,12 +1,15 @@
 package io.kmpbits.splash
 
 import org.gradle.api.Project
+import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.testfixtures.ProjectBuilder
 import org.jetbrains.compose.ComposeExtension
 import org.jetbrains.compose.resources.ResourcesExtension
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class KmpSplashPluginTest {
     @Test
@@ -78,6 +81,26 @@ class KmpSplashPluginTest {
         ext.uiFramework.set(UiFramework.Native)
 
         assertEquals(UiFramework.Native, project.generateLaunchScreenTask().uiFramework.get())
+    }
+
+    @Test
+    fun `requiresAndroidAppPathForNativeUi is true only when Android applies, uiFramework is Native, and androidAppPath is unset`() {
+        assertTrue(requiresAndroidAppPathForNativeUi(appliesAndroid = true, uiFramework = UiFramework.Native, androidAppPathPresent = false))
+        assertFalse(requiresAndroidAppPathForNativeUi(appliesAndroid = true, uiFramework = UiFramework.Native, androidAppPathPresent = true))
+        assertFalse(requiresAndroidAppPathForNativeUi(appliesAndroid = false, uiFramework = UiFramework.Native, androidAppPathPresent = false))
+        assertFalse(requiresAndroidAppPathForNativeUi(appliesAndroid = true, uiFramework = UiFramework.Compose, androidAppPathPresent = false))
+    }
+
+    @Test
+    fun `does not throw when uiFramework is Native but no Android plugin is applied`() {
+        val project = ProjectBuilder.builder().build() as ProjectInternal
+        project.plugins.apply("org.jetbrains.kotlin.multiplatform")
+        project.plugins.apply("io.github.kmpbits.splash")
+
+        val ext = project.extensions.getByType(KmpSplashExtension::class.java)
+        ext.uiFramework.set(UiFramework.Native)
+
+        project.evaluate() // must not throw — nothing Android to misconfigure
     }
 
     @Test
