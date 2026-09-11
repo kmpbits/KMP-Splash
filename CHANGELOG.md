@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0
+
+### Added
+- **`iosUi = IosUi.SwiftUI` — splash support for KMP apps with a SwiftUI iOS frontend.** Until now the plugin assumed Compose Multiplatform on iOS: it generated a `SplashInit.kt` feeding the `SplashConfig` composable. Set `splashScreen { iosUi = IosUi.SwiftUI }` and the plugin instead generates a `KmpSplashView.swift` straight into your Xcode project (`iosProjectPath`) and wires it into the build — no `io.github.kmpbits:splash-runtime` dependency required. Wrap your root view in `SplashView(isReady:) { ... }`; `isReady` is an optional Swift `async` closure (omit it to just hold the launch screen until the first SwiftUI frame, then run the configured `exitAnimation`). Native asset generation (`UILaunchScreen`, `Assets.xcassets`, app icon) is unchanged. For Xcode 16+ projects (synchronized folder groups) no `project.pbxproj` change is needed; for older projects the plugin patches the Sources build phase automatically. Defaults to `IosUi.Compose` — existing projects are unaffected. See the README's "SwiftUI (native iOS UI)" section.
+
 ## 1.6.0
 
 ### Added
