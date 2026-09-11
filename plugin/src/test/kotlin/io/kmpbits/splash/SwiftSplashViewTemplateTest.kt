@@ -21,6 +21,16 @@ class SwiftSplashViewTemplateTest {
     }
 
     @Test
+    fun `logo centers against the full screen, matching UILaunchScreen, not the safe area`() {
+        // UILaunchScreen centers its image against the full screen bounds, ignoring the safe
+        // area. An Image without .ignoresSafeArea() centers within the safe area instead, which
+        // visibly shifts it whenever the top/bottom insets differ (most current iPhones).
+        val swift = renderSwiftSplashView("SplashBackground", "splash_logo", ExitAnimation.None)
+        val splashBody = swift.substringAfter("private var splash: some View {")
+        assertTrue(splashBody.contains(".ignoresSafeArea()"))
+    }
+
+    @Test
     fun `includes the logo image when a name is given`() {
         val swift = renderSwiftSplashView("SplashBackground", "splash_logo", ExitAnimation.None)
         assertTrue(swift.contains("""Image("splash_logo")"""))

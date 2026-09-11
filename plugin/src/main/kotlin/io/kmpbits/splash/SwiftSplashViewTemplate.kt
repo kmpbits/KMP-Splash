@@ -80,9 +80,15 @@ public struct KmpSplashView<Content: View>: View {
     }
 
     private var splash: some View {
+        // .ignoresSafeArea() on the whole ZStack, not just the background: UILaunchScreen centers
+        // its image against the full screen bounds, ignoring the safe area entirely (it predates
+        // the safe-area API). Centering the logo within the safe area instead — which is what an
+        // Image gets by default — visibly shifts it on any device where the top inset (Dynamic
+        // Island/notch) differs from the bottom one (home indicator), i.e. most current iPhones.
         ZStack {
-            Color("$backgroundColorAssetName").ignoresSafeArea()$logoLine
+            Color("$backgroundColorAssetName")$logoLine
         }
+        .ignoresSafeArea()
     }
 }
 """
