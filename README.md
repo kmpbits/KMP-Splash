@@ -1,10 +1,10 @@
 # KMP Splash
 
-**Professional Splash Screens for Compose Multiplatform, configured in seconds.**
+**Professional Splash Screens for Kotlin Multiplatform, configured in seconds.**
 
-A clean startup in Compose Multiplatform is harder than it should be. Between the native Android `SplashScreen` API and iOS `UILaunchScreen`, you usually get a white flash between the native boot sequence and the moment Compose Multiplatform is ready to draw.
+A clean startup in Kotlin Multiplatform is harder than it should be. Between the native Android `SplashScreen` API and iOS `UILaunchScreen`, you usually get a white flash between the native boot sequence and the moment your UI is ready to draw.
 
-KMP Splash closes that gap. It generates the native splash assets for you and adds a Compose transition layer on top, so there's no visible jump from boot to your first screen.
+KMP Splash closes that gap. It generates the native splash assets for you and adds a transition layer on top — Compose Multiplatform by default, or native SwiftUI on iOS via `uiFramework = UiFramework.Native` — so there's no visible jump from boot to your first screen.
 
 📖 **[Full documentation at kmpbits.com/libraries/kmp-splash](https://kmpbits.com/libraries/kmp-splash)**
 ---
@@ -20,9 +20,9 @@ KMP Splash closes that gap. It generates the native splash assets for you and ad
 
 - **One place to configure it:** Set your background color, logo, and exit animation once in `build.gradle.kts`.
 - **Real native assets:** Generates `Assets.xcassets` for iOS and `themes.xml` for Android.
-- **No flicker:** A `SplashConfig` composable covers the switch from native boot to Compose UI.
+- **No flicker:** A `SplashConfig` composable (or, for a native SwiftUI iOS UI, a generated `KmpSplashView`) covers the switch from native boot to your app's own UI.
 - **Exit animations:** Fade, slide up, or slide down, consistent across Android and iOS, with no extra code.
-- **No Xcode needed:** Patches `.pbxproj` and `Info.plist` for you. No Storyboards.
+- **Little to no Xcode needed:** Patches `.pbxproj` and `Info.plist` for you, no Storyboards, for both the Compose Multiplatform and native SwiftUI paths. One rare case still needs a manual step — see [SwiftUI (native iOS UI)](#swiftui-native-ios-ui).
 - **Dark mode:** Built-in support for dark-mode background colors on Android and iOS.
 
 ---
@@ -30,9 +30,9 @@ KMP Splash closes that gap. It generates the native splash assets for you and ad
 ## Requirements
 
 - Kotlin **2.1.0+**
-- Compose Multiplatform **1.7.0+**
+- Compose Multiplatform **1.7.0+**. Android's generated splash always imports `androidx.compose.*`, regardless of `uiFramework` — this is required on Android even if your iOS UI is native SwiftUI (`uiFramework = UiFramework.Native`). It's only optional on iOS, and only when `uiFramework = UiFramework.Native`.
 - Android: `androidx.core:core-splashscreen` **1.2.0+**, AGP **8.0+**
-- iOS: Xcode 14+ (uses `UILaunchScreen` plist key)
+- iOS: Xcode 14+ (uses `UILaunchScreen` plist key). `uiFramework = UiFramework.Native` additionally needs an **iOS 15+** deployment target, for `KmpSplashView`'s use of SwiftUI's `.task` modifier and `async`/`await`.
 
 ---
 
@@ -90,7 +90,7 @@ splashScreen {
     logoDark = SplashLogo.resource("logo_dark.png")    // Optional: dark mode logo
     exitAnimation = ExitAnimation.FadeOut(300)         // Optional: exit animation (Android + iOS)
     iosProjectPath = "iosApp/iosApp"                   // Optional: defaults to "iosApp/iosApp"
-    androidAppPath = "androidApp"                      // Required if using the new KMP module structure
+    androidAppPath = "androidApp"                      // Required if using the new KMP module structure, or uiFramework = UiFramework.Native
     resourcePackage = "com.example.myapp.generated.resources"  // Optional: override the inferred Compose resource package
     generateAppIcon = true                             // Optional: generate the app icon (Android + iOS) from logo + backgroundColor
 }
@@ -175,7 +175,7 @@ The duration parameter is optional. The values above are the defaults.
 
 > **`iosProjectPath`** should point to the inner folder that contains `Info.plist` and `Assets.xcassets`, typically `iosApp/iosApp`, not the root `iosApp` folder.
 
-> **`androidAppPath`** is required when your project uses the new KMP module structure where the Android app lives in a dedicated module separate from `composeApp`. Set it to the path of that module relative to the root project (e.g. `"androidApp"`). Leave it unset for the classic structure where Android is part of `composeApp`.
+> **`androidAppPath`** is required when your project uses the new KMP module structure where the Android app lives in a dedicated module separate from `composeApp`, **and** when `uiFramework = UiFramework.Native` and your project has an Android target (see [SwiftUI (native iOS UI)](#swiftui-native-ios-ui) — the plugin fails fast with an actionable message if it's missing there). Set it to the path of that module relative to the root project (e.g. `"androidApp"`). Leave it unset for the classic structure where Android is part of `composeApp` with `uiFramework = UiFramework.Compose`.
 
 ### 4. Add the dependencies
 
@@ -298,7 +298,7 @@ class MainActivity : AppCompatActivity() {
 >
 > See `sample/androidApp` for a full working example.
 
-### iOS
+### iOS (Compose Multiplatform)
 
 Call `SplashConfig` in your `MainViewController`, passing your app content as the trailing lambda:
 
@@ -335,12 +335,13 @@ Instead of the Compose `SplashInit.kt`, it generates **`KmpSplashView.swift`** i
 project (`iosProjectPath`) and wires it into the build. You do **not** need the
 `io.github.kmpbits:splash-runtime` dependency in this mode.
 
-`uiFramework` only affects iOS — Android's generated splash is always Compose. **If your project
-has an Android target, `androidAppPath` is required when `uiFramework = UiFramework.Native`:**
-the generated Android `SplashInit.kt` imports `androidx.compose.*`, and the plugin needs
-`androidAppPath` to know which module actually has Compose on its classpath — the module applying
-this plugin is often a shared/business-logic module with no Compose dependency once iOS moves to
-SwiftUI. See the `androidAppPath` section above.
+`uiFramework` only affects iOS — **Android's generated splash always imports `androidx.compose.*`
+and needs Compose on its classpath, regardless of `uiFramework`.** This is unrelated to whether
+your iOS UI is Compose or SwiftUI; it's Android's own current requirement. **If your project has
+an Android target, `androidAppPath` is required when `uiFramework = UiFramework.Native`:** the
+plugin needs `androidAppPath` to know which module actually has Compose on its classpath — the
+module applying this plugin is often a shared/business-logic module with no Compose dependency
+once iOS moves to SwiftUI. See the `androidAppPath` section above.
 
 Wrap your root view:
 
@@ -421,13 +422,16 @@ KmpSplashView { RootView() }
 
 `KmpSplashView.swift` is regenerated on every Gradle sync — do not edit it. For projects created
 with Xcode 16+ (synchronized folder groups) no `.pbxproj` change is needed; for older projects the
-plugin patches the Sources build phase automatically.
+plugin patches the Sources build phase automatically in the common case. If it can't locate that
+build phase (an unusually structured `.pbxproj`), it logs a warning instead of failing the build —
+in that rare case, drag `KmpSplashView.swift` into your app target in Xcode once, and it stays wired
+in for every subsequent regeneration.
 
 ---
 
 ## How it Works
 
-The Gradle plugin does the heavy lifting at build time so you never touch XML or native config files manually:
+The Gradle plugin does the heavy lifting at build time so you rarely touch XML or native config files manually (the one exception is noted in [SwiftUI (native iOS UI)](#swiftui-native-ios-ui) above):
 
 - **Android:** generates `themes.xml` (and `values-night`), copies your logo drawable, and writes a patched **copy** of the `AndroidManifest.xml`, all into the `build/` folder, to apply the splash theme and register a `ContentProvider` that initialises runtime config before your `Activity` starts. Your source files are never modified.
 - **iOS:** generates the `SplashBackground` color asset and logo imageset in `Assets.xcassets`, and patches `Info.plist` and `project.pbxproj` to wire up `UILaunchScreen`. No Storyboard or Xcode required.
@@ -442,9 +446,9 @@ The Gradle plugin does the heavy lifting at build time so you never touch XML or
 
 ## The "Gap" Problem
 
-When a KMP app starts on iOS, the OS shows the native launch screen right away. Once the Kotlin runtime and Compose finish initializing (which can take 500ms or more), the screen usually flashes white or black before your first composable renders.
+When a KMP app starts on iOS, the OS shows the native launch screen right away. Once the Kotlin runtime and your UI framework finish initializing (which can take 500ms or more), the screen usually flashes white or black before your first screen renders.
 
-KMP Splash makes the `SplashConfig` composable visually identical to the native launch screen, so your branding stays on screen until the app is actually ready.
+KMP Splash makes the transition layer — `SplashConfig` for Compose, `KmpSplashView` for native SwiftUI — visually identical to the native launch screen, so your branding stays on screen until the app is actually ready.
 
 ---
 
@@ -460,6 +464,8 @@ The Compose layer (`SplashConfig` / `SplashActivity`) does run app code, so it c
 - Accept the brief mismatch, the native splash shows the system color, and the Compose layer immediately corrects to your app's preferred color
 
 This is a system limitation, not a bug in the library.
+
+**`KmpSplashView` (`uiFramework = UiFramework.Native`) has the same constraint as the native layer, not the Compose one.** Unlike `SplashConfig`, which explicitly reads app state, the generated `KmpSplashView` only references the `SplashBackground`/logo asset catalog entries — the same ones `UILaunchScreen` uses. Named colors and image sets in an asset catalog follow the *system* appearance automatically, but there's currently no way to override that with an app-level preference from within the generated file. The same two options above apply.
 
 ---
 
