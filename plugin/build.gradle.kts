@@ -20,6 +20,23 @@ dependencies {
     testImplementation("org.jetbrains.compose:compose-gradle-plugin:1.7.3")
 }
 
+// Classpath for KmpSplashAndroidAppFunctionalTest only: the plugin's own classes plus AGP 9 and a
+// matching KGP. Kept separate from the shared plugin-under-test classpath (which carries this
+// plugin's KGP 2.1.0) because AGP 9's built-in Kotlin needs a newer KGP, and AGP applied via the
+// test project's `plugins {}` would otherwise sit in a classloader the plugin can't see.
+val androidFunctionalTestClasspath by configurations.creating
+dependencies {
+    androidFunctionalTestClasspath("com.android.tools.build:gradle:9.0.0")
+    androidFunctionalTestClasspath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.21")
+}
+tasks.test {
+    dependsOn(tasks.named("classes"))
+    systemProperty(
+        "kmpsplash.androidTestPluginClasspath",
+        (sourceSets.main.get().output.files + androidFunctionalTestClasspath).joinToString(File.pathSeparator),
+    )
+}
+
 val kmpSplashVersion: String by project
 
 group = "io.github.kmpbits"

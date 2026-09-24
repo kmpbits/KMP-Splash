@@ -335,6 +335,7 @@ class KmpSplashPlugin : Plugin<Project> {
                         )
                         components.onVariants { variant ->
                             wireVariantResourcesAndManifest(androidProject, variant, task, appIconTask, ext.generateAppIcon)
+                            wireBuiltInKotlinSource(androidProject, variant, task, generatedKotlinDir)
                         }
                     }
                     // The generated SplashInit.kt imports androidx.compose.* and must compile
@@ -411,6 +412,33 @@ private fun wireGeneratedAndroidKotlinSource(
             if (name == "preBuild" || name.startsWith("compile")) {
                 dependsOn(task)
             }
+        }
+    }
+}
+
+/**
+ * Fallback for AGP 9+ "built-in Kotlin": the app module compiles Kotlin without applying either
+ * `org.jetbrains.kotlin.android` or `org.jetbrains.kotlin.multiplatform`, so neither branch of
+ * [wireGeneratedAndroidKotlinSource] ever fires and `SplashInit.kt` (which holds
+ * `KmpSplashInitProvider`) would never be compiled — while the manifest patch, wired through the
+ * Variant API, would still register that provider, crashing at app start with
+ * `ClassNotFoundException`. Registers the generated directory through the Variant API instead.
+ * Skipped when one of those plugins is applied, since [wireGeneratedAndroidKotlinSource] already
+ * covers it (registering twice would duplicate the source).
+ */
+private fun wireBuiltInKotlinSource(
+    androidProject: Project,
+    variant: Variant,
+    task: TaskProvider<GenerateAndroidSplashTask>,
+    generatedKotlinDir: Provider<Directory>,
+) {
+    if (androidProject.plugins.hasPlugin("org.jetbrains.kotlin.android") ||
+        androidProject.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
+    ) return
+    variant.sources.kotlin?.addStaticSourceDirectory(generatedKotlinDir.get().asFile.path)
+    androidProject.tasks.configureEach {
+        if (name.startsWith("compile") && name.endsWith("Kotlin")) {
+            dependsOn(task)
         }
     }
 }

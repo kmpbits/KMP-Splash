@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1
+
+### Fixed
+- **`androidAppPath` mode no longer crashes at startup on AGP 9's built-in Kotlin.** With AGP 9 the app module compiles Kotlin itself and applies neither `org.jetbrains.kotlin.android` nor `org.jetbrains.kotlin.multiplatform`. The plugin only added the generated `SplashInit.kt` (which holds `KmpSplashInitProvider`) to the app module's sources when one of those plugins was present, so the class was never compiled, while the manifest patch, wired through the Variant API, still registered the provider. The app then crashed before `MainActivity` with `ClassNotFoundException: io.kmpbits.splash.KmpSplashInitProvider`. The generated Kotlin directory is now registered through the Variant API (`variant.sources.kotlin`) in that case, and the `compile*Kotlin` tasks depend on `generateAndroidSplash`. Setups that apply one of the Kotlin plugins are unchanged. No manual `androidMain.kotlin.srcDir(...)` workaround is needed anymore.
+
 ## 1.7.0
 
 ### Added
