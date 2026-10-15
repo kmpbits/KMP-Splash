@@ -115,6 +115,41 @@ abstract class KmpSplashExtension {
     abstract val resourcePackage: Property<String>
 
     /**
+     * How [logo] is fitted when rasterized for the Android splash icon and the generated app
+     * icons. [LogoFit.Trim] (default) trims transparent borders and scales into each safe zone;
+     * [LogoFit.AsIs] keeps your image exactly as drawn, padding included.
+     *
+     * Only applies to raster logos (PNG, JPEG, GIF, BMP); vector logos are copied through.
+     *
+     * Example:
+     * ```kotlin
+     * splashScreen {
+     *     logo = SplashLogo.resource("logo_padded.png")
+     *     logoFit = LogoFit.AsIs
+     * }
+     * ```
+     */
+    @get:Input
+    abstract val logoFit: Property<LogoFit>
+
+    /**
+     * Overrides the fraction (0.0 exclusive to 1.0 inclusive) of each icon canvas the logo fills.
+     * Smaller values add more padding. With [LogoFit.Trim] it replaces the built-in per-target
+     * defaults (0.60 adaptive icon, 0.72 legacy/iOS icon, 0.66 splash icon); with [LogoFit.AsIs]
+     * it scales the whole image (default 1.0).
+     *
+     * Example:
+     * ```kotlin
+     * splashScreen {
+     *     logoScale = 0.5
+     * }
+     * ```
+     */
+    @get:Input
+    @get:Optional
+    abstract val logoScale: Property<Double>
+
+    /**
      * Whether to generate an Android adaptive app icon (and legacy square/round PNG fallbacks)
      * from [logo] and [backgroundColor].
      *

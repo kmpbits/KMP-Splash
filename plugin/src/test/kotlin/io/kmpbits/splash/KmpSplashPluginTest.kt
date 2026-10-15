@@ -103,6 +103,31 @@ class KmpSplashPluginTest {
         project.evaluate() // must not throw — nothing Android to misconfigure
     }
 
+    private fun evaluateWithLogoScale(scale: Double) {
+        val project = ProjectBuilder.builder().build() as ProjectInternal
+        project.plugins.apply("org.jetbrains.kotlin.multiplatform")
+        project.plugins.apply("io.github.kmpbits.splash")
+        project.extensions.getByType(KmpSplashExtension::class.java).logoScale.set(scale)
+        project.evaluate()
+    }
+
+    @Test
+    fun `logoScale outside 0 to 1 fails evaluation`() {
+        for (invalid in listOf(-0.5, 0.0, 1.5)) {
+            val error = kotlin.test.assertFailsWith<Exception>("expected $invalid to be rejected") {
+                evaluateWithLogoScale(invalid)
+            }
+            val messages = generateSequence<Throwable>(error) { it.cause }.mapNotNull { it.message }.toList()
+            assertTrue(messages.any { "logoScale" in it }, "expected a logoScale message for $invalid, got $messages")
+        }
+    }
+
+    @Test
+    fun `logoScale within 0 to 1 passes evaluation`() {
+        evaluateWithLogoScale(0.5)
+        evaluateWithLogoScale(1.0)
+    }
+
     @Test
     fun `ExitAnimation None toKotlinExpression returns null`() {
         kotlin.test.assertNull(ExitAnimation.None.toKotlinExpression())

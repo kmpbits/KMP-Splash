@@ -93,6 +93,8 @@ splashScreen {
     androidAppPath = "androidApp"                      // Required if using the new KMP module structure, or uiFramework = UiFramework.Native
     resourcePackage = "com.example.myapp.generated.resources"  // Optional: override the inferred Compose resource package
     generateAppIcon = true                             // Optional: generate the app icon (Android + iOS) from logo + backgroundColor
+    logoFit = LogoFit.Trim                             // Optional: LogoFit.AsIs keeps your image's own padding
+    logoScale = 0.66                                   // Optional: override how much of the canvas the logo fills
 }
 ```
 
@@ -161,6 +163,21 @@ This requires `logo` to be set, in a rasterizable format (PNG, JPEG, GIF, or BMP
 - **iOS:** a single 1024×1024 `AppIcon.appiconset` image (Xcode 14+ derives every other required size from it automatically), composited from `logo` over `backgroundColor` the same way as Android's legacy fallback icon.
 
 It's off by default. Changing your app's launcher icon is a visible, home-screen-facing change, so it's opt-in rather than automatic whenever `logo` is set. `backgroundColorNight` and `logoDark` aren't used for the icon on either platform: launchers/springboards don't resolve dark-mode resource qualifiers for app icons.
+
+#### Logo padding (`logoFit` / `logoScale`)
+
+By default the plugin trims your logo's transparent border and scales it into each target's safe zone (0.60 adaptive icon, 0.72 legacy/iOS icon, 0.66 Android splash icon), so any padding baked into your image is replaced by the plugin's own. This applies to the Android splash icon and to `generateAppIcon` output. Two options let you take control:
+
+```kotlin
+splashScreen {
+    logo = SplashLogo.resource("logo_padded.png")
+    logoFit = LogoFit.AsIs   // Use the image exactly as drawn, padding included (default: LogoFit.Trim)
+    logoScale = 0.5          // Optional: fraction (0.0 to 1.0) of the canvas the logo fills
+}
+```
+
+- `LogoFit.AsIs` skips the trim and uses the whole image. You are responsible for leaving enough margin that Android's splash/launcher masks don't crop the artwork.
+- `logoScale` overrides the built-in per-target fractions with a single value; smaller means more padding. With `AsIs` it scales the whole image (default `1.0`).
 
 #### ExitAnimation options
 

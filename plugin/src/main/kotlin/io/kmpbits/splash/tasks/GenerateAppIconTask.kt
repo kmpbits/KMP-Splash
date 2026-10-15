@@ -1,6 +1,7 @@
 package io.kmpbits.splash.tasks
 
 import io.kmpbits.splash.AppIconGenerator
+import io.kmpbits.splash.LogoFit
 import io.kmpbits.splash.template.AndroidSplashTemplate
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
@@ -38,6 +39,13 @@ abstract class GenerateAppIconTask : DefaultTask() {
     @get:InputFile
     @get:Optional
     abstract val logoSourceFile: RegularFileProperty
+
+    @get:Input
+    abstract val logoFit: Property<LogoFit>
+
+    @get:Input
+    @get:Optional
+    abstract val logoScale: Property<Double>
 
     @get:OutputDirectory
     abstract val resOutputDir: DirectoryProperty
@@ -95,17 +103,17 @@ abstract class GenerateAppIconTask : DefaultTask() {
             val mipmapDir = resDir.resolve("mipmap-$density").also { it.mkdirs() }
 
             ImageIO.write(
-                AppIconGenerator.renderForeground(logo, foregroundSize),
+                AppIconGenerator.renderForeground(logo, foregroundSize, logoFit.getOrElse(LogoFit.Trim), logoScale.orNull),
                 "png",
                 mipmapDir.resolve("ic_kmp_app_icon_foreground.png"),
             )
             ImageIO.write(
-                AppIconGenerator.renderLegacy(logo, background, legacySize, round = false),
+                AppIconGenerator.renderLegacy(logo, background, legacySize, round = false, fit = logoFit.getOrElse(LogoFit.Trim), scaleOverride = logoScale.orNull),
                 "png",
                 mipmapDir.resolve("ic_kmp_app_icon.png"),
             )
             ImageIO.write(
-                AppIconGenerator.renderLegacy(logo, background, legacySize, round = true),
+                AppIconGenerator.renderLegacy(logo, background, legacySize, round = true, fit = logoFit.getOrElse(LogoFit.Trim), scaleOverride = logoScale.orNull),
                 "png",
                 mipmapDir.resolve("ic_kmp_app_icon_round.png"),
             )
@@ -115,11 +123,14 @@ abstract class GenerateAppIconTask : DefaultTask() {
     }
 
     private fun checkUpscaling(logo: BufferedImage) {
-        val trimmed = AppIconGenerator.trimTransparentBorder(logo)
+        val trimmed = AppIconGenerator.contentBounds(logo, logoFit.getOrElse(LogoFit.Trim))
         val smallerDimension = minOf(trimmed.width, trimmed.height)
-        if (AppIconGenerator.needsUpscalingWarning(smallerDimension)) {
+        val scale = AppIconGenerator.effectiveScale(
+            AppIconGenerator.FOREGROUND_CONTENT_SCALE, logoFit.getOrElse(LogoFit.Trim), logoScale.orNull,
+        )
+        if (AppIconGenerator.needsUpscalingWarning(smallerDimension, scale)) {
             logger.warn(
-                "KmpSplash: logo's trimmed content is ${trimmed.width}x${trimmed.height}px, smaller than " +
+                "KmpSplash: logo's content is ${trimmed.width}x${trimmed.height}px, smaller than " +
                 "ideal for the largest app icon density and will be upscaled. Consider a higher-resolution logo."
             )
         }

@@ -120,6 +120,39 @@ class AppIconGeneratorTest {
     }
 
     @Test
+    fun `renderSplashIcon with AsIs keeps the source size and padding`() {
+        val logo = paddedTestLogo()
+
+        val splashIcon = AppIconGenerator.renderSplashIcon(logo, LogoFit.AsIs)
+
+        assertEquals(logo.width, splashIcon.width)
+        assertEquals(logo.getRGB(15, 15), splashIcon.getRGB(15, 15))
+        assertEquals(0, splashIcon.argbAt(5, 5).alpha(), "expected the source padding to be preserved")
+    }
+
+    @Test
+    fun `renderSplashIcon scaleOverride replaces the default content fraction`() {
+        val logo = paddedTestLogo()
+
+        val splashIcon = AppIconGenerator.renderSplashIcon(logo, LogoFit.Trim, scaleOverride = 0.5)
+
+        assertEquals(40, splashIcon.width) // trimmed 20px content / 0.5
+    }
+
+    @Test
+    fun `renderForeground with AsIs fills the canvas with the untrimmed image`() {
+        val logo = BufferedImage(40, 40, BufferedImage.TYPE_INT_ARGB)
+        val g = logo.createGraphics()
+        g.color = Color.RED
+        g.fillRect(0, 0, 40, 40)
+        g.dispose()
+
+        val foreground = AppIconGenerator.renderForeground(logo, 100, LogoFit.AsIs)
+
+        assertTrue(foreground.argbAt(1, 1).red() > 150, "expected edge-to-edge content with no added padding")
+    }
+
+    @Test
     fun `parseHexColor parses a hash-prefixed hex string`() {
         val color = AppIconGenerator.parseHexColor("#FF0000")
 

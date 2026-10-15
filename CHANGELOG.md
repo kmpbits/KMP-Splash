@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.0
+
+### Added
+- **`logoFit` and `logoScale` — control how the logo is padded for the splash icon and generated app icons.** Reported by a user whose logo already had generous padding but came out cropped or resized on both the splash screen and the app icon. By default the plugin trims the logo's transparent border and rescales it into each target's safe zone (0.60 adaptive icon, 0.72 legacy/iOS icon, 0.66 splash icon), so padding baked into the source image was discarded and replaced by the plugin's own. `splashScreen { logoFit = LogoFit.AsIs }` now uses the image exactly as drawn, with no trim and no safe-zone scaling; you are responsible for leaving enough margin for Android's splash/launcher masks. `splashScreen { logoScale = 0.5 }` overrides the built-in per-target fractions with a single value (greater than 0.0, at most 1.0; anything else fails the build) and, with `AsIs`, scales the whole image. Both apply to the Android splash icon and to `generateAppIcon` output on Android and iOS, and only to raster logos (PNG, JPEG, GIF, BMP). Defaults to `LogoFit.Trim` with no scale override, so existing projects are unaffected. See the README's "Logo padding" section.
+
 ## 1.7.1
 
 ### Fixed

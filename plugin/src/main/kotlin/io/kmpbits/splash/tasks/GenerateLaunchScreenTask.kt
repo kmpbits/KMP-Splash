@@ -2,6 +2,7 @@ package io.kmpbits.splash.tasks
 
 import io.kmpbits.splash.AppIconGenerator
 import io.kmpbits.splash.ExitAnimation
+import io.kmpbits.splash.LogoFit
 import io.kmpbits.splash.UiFramework
 import io.kmpbits.splash.renderSwiftSplashView
 import io.kmpbits.splash.toKotlinExpression
@@ -75,6 +76,13 @@ abstract class GenerateLaunchScreenTask : DefaultTask() {
     @get:Input
     @get:Optional
     abstract val generateAppIcon: Property<Boolean>
+
+    @get:Input
+    abstract val logoFit: Property<LogoFit>
+
+    @get:Input
+    @get:Optional
+    abstract val logoScale: Property<Double>
 
 
     /** Resolved file handle — @Internal so Gradle skips its own (unfriendly) validation. */
@@ -325,7 +333,10 @@ $lightColorJson$darkColorJson
 
         checkIconUpscaling(logo)
 
-        val rendered = AppIconGenerator.renderLegacy(logo, background, canvasPx = 1024, round = false)
+        val rendered = AppIconGenerator.renderLegacy(
+            logo, background, canvasPx = 1024, round = false,
+            fit = logoFit.getOrElse(LogoFit.Trim), scaleOverride = logoScale.orNull,
+        )
         // Apple rejects a submitted icon that carries an alpha channel, even fully opaque —
         // flatten into a channel-free RGB image before writing.
         val opaque = BufferedImage(1024, 1024, BufferedImage.TYPE_INT_RGB)
@@ -342,12 +353,15 @@ $lightColorJson$darkColorJson
     }
 
     private fun checkIconUpscaling(logo: BufferedImage) {
-        val trimmed = AppIconGenerator.trimTransparentBorder(logo)
+        val trimmed = AppIconGenerator.contentBounds(logo, logoFit.getOrElse(LogoFit.Trim))
         val smallerDimension = minOf(trimmed.width, trimmed.height)
-        val targetContentPx = (1024 * AppIconGenerator.LEGACY_CONTENT_SCALE).toInt()
+        val scale = AppIconGenerator.effectiveScale(
+            AppIconGenerator.LEGACY_CONTENT_SCALE, logoFit.getOrElse(LogoFit.Trim), logoScale.orNull,
+        )
+        val targetContentPx = (1024 * scale).toInt()
         if (AppIconGenerator.needsUpscalingWarning(smallerDimension, targetContentPx)) {
             logger.warn(
-                "KmpSplash: logo's trimmed content is ${trimmed.width}x${trimmed.height}px, smaller than " +
+                "KmpSplash: logo's content is ${trimmed.width}x${trimmed.height}px, smaller than " +
                 "ideal for the iOS app icon and will be upscaled. Consider a higher-resolution logo."
             )
         }

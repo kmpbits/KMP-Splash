@@ -2,6 +2,7 @@ package io.kmpbits.splash.tasks
 
 import io.kmpbits.splash.AppIconGenerator
 import io.kmpbits.splash.ExitAnimation
+import io.kmpbits.splash.LogoFit
 import io.kmpbits.splash.template.AndroidSplashTemplate
 import io.kmpbits.splash.toKotlinExpression
 import org.gradle.api.DefaultTask
@@ -63,6 +64,13 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
     abstract val exitAnimation: Property<ExitAnimation>
 
     /** Consumer-supplied `postSplashScreenTheme` reference, e.g. `"@style/Theme.MyApp"`. */
+    @get:Input
+    abstract val logoFit: Property<LogoFit>
+
+    @get:Input
+    @get:Optional
+    abstract val logoScale: Property<Double>
+
     @get:Input
     @get:Optional
     abstract val postSplashTheme: Property<String>
@@ -144,7 +152,7 @@ abstract class GenerateAndroidSplashTask : DefaultTask() {
                 "KmpSplash: could not decode logo file '${src.absolutePath}' as an image."
             )
         ImageIO.write(
-            AppIconGenerator.renderSplashIcon(logo),
+            AppIconGenerator.renderSplashIcon(logo, logoFit.getOrElse(LogoFit.Trim), logoScale.orNull),
             "png",
             destDir.resolve("ic_kmp_splash_logo.png"),
         )

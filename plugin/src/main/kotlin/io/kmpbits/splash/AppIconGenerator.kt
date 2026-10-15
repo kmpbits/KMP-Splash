@@ -1,9 +1,6 @@
 package io.kmpbits.splash
 
 import io.kmpbits.splash.AppIconGenerator.ALPHA_TRIM_THRESHOLD
-import io.kmpbits.splash.AppIconGenerator.FOREGROUND_CONTENT_SCALE
-import io.kmpbits.splash.AppIconGenerator.LEGACY_CONTENT_SCALE
-import io.kmpbits.splash.AppIconGenerator.SPLASH_ICON_CONTENT_SCALE
 import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.Rectangle
@@ -92,9 +89,12 @@ internal object AppIconGenerator {
      * [FOREGROUND_CONTENT_SCALE] of the largest generated foreground canvas without visible
      * upscaling. Delegates to the general two-argument overload below.
      */
-    fun needsUpscalingWarning(trimmedContentPx: Int): Boolean {
+    fun needsUpscalingWarning(
+        trimmedContentPx: Int,
+        contentScale: Double = FOREGROUND_CONTENT_SCALE,
+    ): Boolean {
         val largestCanvas = FOREGROUND_DENSITIES.values.max()
-        val targetContentPx = (largestCanvas * FOREGROUND_CONTENT_SCALE).toInt()
+        val targetContentPx = (largestCanvas * contentScale).toInt()
         return needsUpscalingWarning(trimmedContentPx, targetContentPx)
     }
 
@@ -110,11 +110,16 @@ internal object AppIconGenerator {
      * Renders the adaptive-icon foreground layer: the trimmed [logo] scaled to
      * [FOREGROUND_CONTENT_SCALE] of a transparent [canvasPx] x [canvasPx] canvas, centered.
      */
-    fun renderForeground(logo: BufferedImage, canvasPx: Int): BufferedImage {
+    fun renderForeground(
+        logo: BufferedImage,
+        canvasPx: Int,
+        fit: LogoFit = LogoFit.Trim,
+        scaleOverride: Double? = null,
+    ): BufferedImage {
         val canvas = BufferedImage(canvasPx, canvasPx, BufferedImage.TYPE_INT_ARGB)
         val g = canvas.createGraphics()
         configureQuality(g)
-        drawTrimmedAndScaled(g, logo, canvasPx, FOREGROUND_CONTENT_SCALE)
+        drawTrimmedAndScaled(g, logo, canvasPx, effectiveScale(FOREGROUND_CONTENT_SCALE, fit, scaleOverride), fit)
         g.dispose()
         return canvas
     }
@@ -128,6 +133,8 @@ internal object AppIconGenerator {
         backgroundColor: Color,
         canvasPx: Int,
         round: Boolean,
+        fit: LogoFit = LogoFit.Trim,
+        scaleOverride: Double? = null,
     ): BufferedImage {
         val canvas = BufferedImage(canvasPx, canvasPx, BufferedImage.TYPE_INT_ARGB)
         val g = canvas.createGraphics()
@@ -139,7 +146,7 @@ internal object AppIconGenerator {
 
         g.color = backgroundColor
         g.fillRect(0, 0, canvasPx, canvasPx)
-        drawTrimmedAndScaled(g, logo, canvasPx, LEGACY_CONTENT_SCALE)
+        drawTrimmedAndScaled(g, logo, canvasPx, effectiveScale(LEGACY_CONTENT_SCALE, fit, scaleOverride), fit)
         g.dispose()
         return canvas
     }
@@ -150,18 +157,34 @@ internal object AppIconGenerator {
      * centered. Pads a logo that would otherwise be drawn edge-to-edge so the system's icon mask
      * doesn't crop it.
      */
-    fun renderSplashIcon(logo: BufferedImage): BufferedImage {
-        val trimmed = trimTransparentBorder(logo)
-        val canvasPx = (maxOf(trimmed.width, trimmed.height) / SPLASH_ICON_CONTENT_SCALE)
+    fun renderSplashIcon(
+        logo: BufferedImage,
+        fit: LogoFit = LogoFit.Trim,
+        scaleOverride: Double? = null,
+    ): BufferedImage {
+        val content = contentBounds(logo, fit)
+        val scale = effectiveScale(SPLASH_ICON_CONTENT_SCALE, fit, scaleOverride)
+        val canvasPx = (maxOf(content.width, content.height) / scale)
             .toInt()
             .coerceAtLeast(1)
         val canvas = BufferedImage(canvasPx, canvasPx, BufferedImage.TYPE_INT_ARGB)
         val g = canvas.createGraphics()
         configureQuality(g)
-        drawTrimmedAndScaled(g, logo, canvasPx, SPLASH_ICON_CONTENT_SCALE)
+        drawTrimmedAndScaled(g, logo, canvasPx, scale, fit)
         g.dispose()
         return canvas
     }
+
+    /** The region of [logo] that gets drawn: its trimmed bounds, or the whole image for [LogoFit.AsIs]. */
+    fun contentBounds(logo: BufferedImage, fit: LogoFit): Rectangle =
+        if (fit == LogoFit.AsIs) Rectangle(0, 0, logo.width, logo.height) else trimTransparentBorder(logo)
+
+    /**
+     * Fraction of the canvas the content fills: [scaleOverride] if set, else [default] for
+     * [LogoFit.Trim] or the full canvas (1.0) for [LogoFit.AsIs].
+     */
+    fun effectiveScale(default: Double, fit: LogoFit, scaleOverride: Double?): Double =
+        scaleOverride ?: if (fit == LogoFit.AsIs) 1.0 else default
 
     private fun configureQuality(g: Graphics2D) {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
@@ -170,8 +193,14 @@ internal object AppIconGenerator {
     }
 
     /** Draws [logo], trimmed and scaled to [contentScale] of [canvasPx], centered, onto [g]. */
-    private fun drawTrimmedAndScaled(g: Graphics2D, logo: BufferedImage, canvasPx: Int, contentScale: Double) {
-        val trimmed = trimTransparentBorder(logo)
+    private fun drawTrimmedAndScaled(
+        g: Graphics2D,
+        logo: BufferedImage,
+        canvasPx: Int,
+        contentScale: Double,
+        fit: LogoFit,
+    ) {
+        val trimmed = contentBounds(logo, fit)
         val targetSize = canvasPx * contentScale
         val scale = minOf(targetSize / trimmed.width, targetSize / trimmed.height)
         val drawWidth = (trimmed.width * scale).toInt().coerceAtLeast(1)

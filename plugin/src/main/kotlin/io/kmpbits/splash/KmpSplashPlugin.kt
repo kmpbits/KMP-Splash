@@ -33,8 +33,16 @@ class KmpSplashPlugin : Plugin<Project> {
         val ext = project.extensions.create("splashScreen", KmpSplashExtension::class.java)
         ext.iosProjectPath.convention("iosApp/iosApp")
         ext.generateAppIcon.convention(false)
+        ext.logoFit.convention(LogoFit.Trim)
         ext.uiFramework.convention(UiFramework.Compose)
         project.afterEvaluate {
+            ext.logoScale.orNull?.let { scale ->
+                if (scale <= 0.0 || scale > 1.0) {
+                    throw GradleException(
+                        "KmpSplash: 'logoScale' must be greater than 0.0 and at most 1.0, but was $scale."
+                    )
+                }
+            }
             // Android is unaffected by uiFramework — the generated SplashInit.kt always targets
             // Compose and imports androidx.compose.*. Only enforced when this project actually
             // has an Android target at all; a project with none (e.g. iOS-only) has no Android
@@ -123,6 +131,8 @@ class KmpSplashPlugin : Plugin<Project> {
                 exitAnimation.set(ext.exitAnimation)
                 uiFramework.set(ext.uiFramework)
                 generateAppIcon.set(ext.generateAppIcon)
+                logoFit.set(ext.logoFit)
+                logoScale.set(ext.logoScale)
             }
         )
 
@@ -230,6 +240,8 @@ class KmpSplashPlugin : Plugin<Project> {
                     })
                 )
                 exitAnimation.set(ext.exitAnimation)
+                logoFit.set(ext.logoFit)
+                logoScale.set(ext.logoScale)
                 postSplashTheme.set(ext.androidPostSplashTheme)
             }
         )
@@ -242,6 +254,8 @@ class KmpSplashPlugin : Plugin<Project> {
                 description = "Generates the Android adaptive app icon and legacy fallbacks"
 
                 enabled.set(ext.generateAppIcon)
+                logoFit.set(ext.logoFit)
+                logoScale.set(ext.logoScale)
                 backgroundColor.set(ext.backgroundColor.map { it.hex })
                 logoSourceFile.set(
                     project.layout.file(ext.logo.map { logo -> project.file(logo.resolvedPath()) })
